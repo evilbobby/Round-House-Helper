@@ -18,4 +18,12 @@ script AppDelegate
 		return current application's NSTerminateNow
 	end applicationShouldTerminate_
 	
+    on log_event(themessage)
+        set theLine to (do shell script ¬
+        "date  +'%Y-%m-%d %H:%M:%S'" as string) ¬
+        & " " & themessage
+        do shell script "echo " & theLine & ¬
+        " >> ~/Library/Logs/RoundHouseHelper.log"
+    end log_event
+    
 end script
