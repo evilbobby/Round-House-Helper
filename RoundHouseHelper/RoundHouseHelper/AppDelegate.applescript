@@ -8,6 +8,8 @@
 
 script AppDelegate
 	property parent : class "NSObject"
+    
+    property defaults : missing value
     property MainWindow : missing value
 	property MainView : missing value
 	property SearchView : missing value
@@ -15,18 +17,70 @@ script AppDelegate
     property CacheWindow : missing value
     property PreferencesWindow : missing value
     property ReshootWindow : missing value
-	
-	on applicationWillFinishLaunching_(aNotification)
+    property savefolderlocLabel : missing value
+    
+    (* ======================================================================
+                            Handlers for Processing! 
+     ====================================================================== *)
+    
+    
+    
+    (* ======================================================================
+                        Handlers for startup & shutdown! 
+     ====================================================================== *)
+    
+    on CheckCacheFolders_(sender)
+        set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive"}
+        set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
+        set CacheFolderCreated to false
+    
+        try
+            tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
+            log_event("Cache Folder 'RoundHouseHelper' created at... " & CacheFolderLoc as string)
+        end try
+        set RoundHouseHelper_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:" as string) as alias
+        repeat with aFolder in CacheFolderList
+            try
+                tell application "Finder" to make new folder at RoundHouseHelper_folder with properties {name:aFolder}
+                log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
+            end try
+        end repeat
+    end CheckCacheFolders_
+    
+    (* ======================================================================
+                    Default "Application will..." Handlers
+     ====================================================================== *)
+    
+    on applicationWillFinishLaunching_(aNotification)
         log_event("==========PROGRAM INITILIZE=========")
+        --Get Preferences
+        tell current application's NSUserDefaults to set defaults to standardUserDefaults()
+        tell defaults to registerDefaults_({saveFolderloc:((path to desktop)as string)})
+        retrieveDefaults_(me)
         --Declare MainView as starting view
         global curView
         set curView to MainView
+        --Routine Check Cache folders
+        CheckCacheFolders_(me)
 	end applicationWillFinishLaunching_
 	
 	on applicationShouldTerminate_(sender)
         log_event("==========PROGRAM SHUTDOWN==========")
 		return current application's NSTerminateNow
 	end applicationShouldTerminate_
+    
+    (* ======================================================================
+     Background Handlers for window/view control, Preferences, logging etc 
+     ====================================================================== *)
+    
+    on retrieveDefaults_(sender)
+        --Read the preferences from the preferences file
+        global saveFolderloc
+        tell defaults to set saveFolderloc to objectForKey_("saveFolderloc")
+        updateSavefolderLocLabel_(me)
+        log_event("Read in Preferences...")
+        log_event("Save Folder Location: " & saveFolderloc)
+    end retrieveDefaults_
     
     -- View changing handler for multiple view changes.
     on changeView_(sender)
@@ -91,7 +145,7 @@ script AppDelegate
 	end ClearCacheCancelButton_
     
     on OpenPreferences_(sender)
-        --open perferecnes window
+        --open preferences window
         PreferencesWindow's makeKeyAndOrderFront_(me)
         log_event("Opened Preferences")
     end OpenPreferences_
@@ -101,6 +155,26 @@ script AppDelegate
         ReshootWindow's makeKeyAndOrderFront_(me)
         log_event("Opened Reshoot-New Window")
     end ReshootNew_
+    
+    on updateSavefolderLocLabel_(sender)
+        --Update the text field containing the save folder location
+        global saveFolderloc
+        tell savefolderlocLabel
+            setEditable_(1)
+            setStringValue_(saveFolderloc)
+            setEditable_(0)
+        end tell
+        log_event("Update save folder location text field.")
+    end updateSavefolderLocLabel_
+    
+    on changeSaveFolderloc_(sender)
+        --Change the save folder location
+        global saveFolderloc
+        set choice to (choose folder) as string
+        tell defaults to setObject_forKey_(choice, "saveFolderloc")
+        retrieveDefaults_(me)
+        log_event("Change Save folder location...")
+    end changeSaveFolderloc_
 	
     on log_event(themessage)
         --Log event, then write to rolling log file.
