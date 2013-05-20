@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		67E549E317499285008296BF /* NSWindow+MyriadHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 67E549E217499285008296BF /* NSWindow+MyriadHelpers.m */; };
 		67E7485C17383B60004FC3CD /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67E7485B17383B60004FC3CD /* Cocoa.framework */; };
 		67E7485E17383B60004FC3CD /* AppleScriptObjC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67E7485D17383B60004FC3CD /* AppleScriptObjC.framework */; };
 		67E7486817383B60004FC3CD /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 67E7486617383B60004FC3CD /* InfoPlist.strings */; };
@@ -17,6 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		67E549E117499285008296BF /* NSWindow+MyriadHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSWindow+MyriadHelpers.h"; sourceTree = "<group>"; };
+		67E549E217499285008296BF /* NSWindow+MyriadHelpers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSWindow+MyriadHelpers.m"; sourceTree = "<group>"; };
 		67E7485817383B60004FC3CD /* RoundHouseHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoundHouseHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		67E7485B17383B60004FC3CD /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		67E7485D17383B60004FC3CD /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
@@ -95,6 +98,8 @@
 		67E7486417383B60004FC3CD /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				67E549E117499285008296BF /* NSWindow+MyriadHelpers.h */,
+				67E549E217499285008296BF /* NSWindow+MyriadHelpers.m */,
 				67E7486517383B60004FC3CD /* RoundHouseHelper-Info.plist */,
 				67E7486617383B60004FC3CD /* InfoPlist.strings */,
 				67E7486917383B60004FC3CD /* main.m */,
@@ -187,6 +192,7 @@
 			files = (
 				67E7486A17383B60004FC3CD /* main.m in Sources */,
 				67E7487017383B60004FC3CD /* AppDelegate.applescript in Sources */,
+				67E549E317499285008296BF /* NSWindow+MyriadHelpers.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
