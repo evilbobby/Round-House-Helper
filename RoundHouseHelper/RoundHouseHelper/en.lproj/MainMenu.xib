@@ -278,7 +278,6 @@
 							<string key="NSFrame">{{391, 13}, {70, 32}}</string>
 							<reference key="NSSuperview" ref="439893737"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="987822601">
@@ -426,7 +425,6 @@
 							<string key="NSFrame">{{379, 13}, {82, 32}}</string>
 							<reference key="NSSuperview" ref="65241400"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="43185258">
@@ -587,7 +585,6 @@
 						<string key="NSFrame">{{391, 13}, {70, 32}}</string>
 						<reference key="NSSuperview" ref="974548065"/>
 						<reference key="NSWindow"/>
-						<reference key="NSNextKeyView"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="NSEnabled">YES</bool>
 						<object class="NSButtonCell" key="NSCell" id="117793614">
@@ -761,7 +758,6 @@
 							<string key="NSFrame">{{329, 22}, {82, 32}}</string>
 							<reference key="NSSuperview" ref="1061942026"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="989141091">
@@ -878,7 +874,6 @@
 							<string key="NSFrame">{{297, 14}, {164, 32}}</string>
 							<reference key="NSSuperview" ref="1067168125"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="833223324">
@@ -1200,7 +1195,6 @@
 							<string key="NSFrame">{{14, 13}, {140, 32}}</string>
 							<reference key="NSSuperview" ref="84484701"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="17417624">
@@ -1330,14 +1324,6 @@
 					<int key="connectionID">788</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">ClearCacheCancelButton:</string>
-						<reference key="source" ref="976324537"/>
-						<reference key="destination" ref="252132787"/>
-					</object>
-					<int key="connectionID">790</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">ReshootWindow</string>
 						<reference key="source" ref="976324537"/>
@@ -1416,6 +1402,38 @@
 						<reference key="destination" ref="871223257"/>
 					</object>
 					<int key="connectionID">856</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">CancelClearCache:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="252132787"/>
+					</object>
+					<int key="connectionID">857</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">dropletButtons:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="136603748"/>
+					</object>
+					<int key="connectionID">858</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">dropletButtons:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="294954402"/>
+					</object>
+					<int key="connectionID">859</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">dropletButtons:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="930710585"/>
+					</object>
+					<int key="connectionID">860</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -2298,7 +2316,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">856</int>
+			<int key="maxID">860</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2306,7 +2324,8 @@
 					<string key="className">AppDelegate</string>
 					<string key="superclassName">NSObject</string>
 					<dictionary class="NSMutableDictionary" key="actions">
-						<string key="ClearCacheCancelButton:">id</string>
+						<string key="CancelClearCache:">id</string>
+						<string key="CheckCacheFolders:">id</string>
 						<string key="OpenPreferences:">id</string>
 						<string key="ReshootNew:">id</string>
 						<string key="StartClearCache:">id</string>
@@ -2314,12 +2333,19 @@
 						<string key="applicationWillFinishLaunching:">id</string>
 						<string key="changeSaveFolderloc:">id</string>
 						<string key="changeView:">id</string>
+						<string key="checkCacheFolders:">id</string>
+						<string key="checkDroplets:">id</string>
+						<string key="dropletButtons:">id</string>
 						<string key="retrieveDefaults:">id</string>
 						<string key="updateSavefolderLocLabel:">id</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="actionInfosByName">
-						<object class="IBActionInfo" key="ClearCacheCancelButton:">
-							<string key="name">ClearCacheCancelButton:</string>
+						<object class="IBActionInfo" key="CancelClearCache:">
+							<string key="name">CancelClearCache:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="CheckCacheFolders:">
+							<string key="name">CheckCacheFolders:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="OpenPreferences:">
@@ -2348,6 +2374,18 @@
 						</object>
 						<object class="IBActionInfo" key="changeView:">
 							<string key="name">changeView:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="checkCacheFolders:">
+							<string key="name">checkCacheFolders:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="checkDroplets:">
+							<string key="name">checkDroplets:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="dropletButtons:">
+							<string key="name">dropletButtons:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="retrieveDefaults:">
