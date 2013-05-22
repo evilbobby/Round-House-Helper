@@ -9,7 +9,9 @@
 script AppDelegate
 	property parent : class "NSObject"
     
+    --Preferences
     property defaults : missing value
+    --Windows
     property MainWindow : missing value
 	property MainView : missing value
 	property SearchView : missing value
@@ -17,12 +19,17 @@ script AppDelegate
     property CacheWindow : missing value
     property PreferencesWindow : missing value
     property ReshootWindow : missing value
+    --Preferences Window
     property savefolderlocLabel : missing value
+    property rawFolderloclabel : missing value
+    property drop1Indicator : missing value
+    property drop2Indicator : missing value
+    property drop3Indicator : missing value
+    
     
     (* ======================================================================
                             Handlers for Processing! 
      ====================================================================== *)
-    
     
     
     (* ======================================================================
@@ -48,9 +55,9 @@ script AppDelegate
     end defineGlobals
     
     on checkCacheFolders_(sender)
+        log_event("Checking for Cache Folders...")
         set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive", "Droplets"}
         set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
-        set CacheFolderCreated to false
     
         try
             tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
@@ -63,6 +70,7 @@ script AppDelegate
                 log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
             end try
         end repeat
+        log_event("Checking for Cache Folders...Finished")
     end checkCacheFolders_
         
     on checkDroplets_(sender)
@@ -82,15 +90,25 @@ script AppDelegate
         if dropFolderCont as text contains drop1Name then
             set droplet1exist of dropletsExist to true
             if initializing is true then log_event("Found " & drop1Name as string)
+            tell drop1Indicator to setIntValue_(1)
+        else
+            tell drop1Indicator to setIntValue_(3)
         end if
         if dropFolderCont as text contains drop2Name then
             set droplet2exist of dropletsExist to true
             if initializing is true then log_event("Found " & drop2Name as string)
+            tell drop2Indicator to setIntValue_(1)
+        else
+            tell drop2Indicator to setIntValue_(3)
         end if
         if dropFolderCont as text contains drop3Name then
             set droplet3exist of dropletsExist to true
             if initializing is true then log_event("Found " & drop3Name as string)
+            tell drop3Indicator to setIntValue_(1)
+        else
+            tell drop3Indicator to setIntValue_(3)
         end if
+        log_event("Checking for Droplets...Finished")
     end checkDroplets_
             
     
@@ -106,7 +124,7 @@ script AppDelegate
         defineGlobals()
         --Set/Get Preferences
         tell current application's NSUserDefaults to set defaults to standardUserDefaults()
-        tell defaults to registerDefaults_({saveFolderloc:((path to desktop)as string)})
+        tell defaults to registerDefaults_({saveFolderloc:((path to desktop)as string),rawFolderloc:((path to desktop)as string)})
         retrieveDefaults_(me)
         --Declare MainView as starting view
         global curView
@@ -115,6 +133,9 @@ script AppDelegate
         checkCacheFolders_(me)
         --Check for Droplets
         checkDroplets_(me)
+        
+        --testing
+        loopthing()
         
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to false
@@ -157,7 +178,7 @@ script AppDelegate
 			-- resize window
 			setFrame_display_animate_(newFrame, true, true)
 			-- put in the replacement view
-			if sender's superview() = MainView then
+			if curView = SearchView then
 				setContentView_(SearchView)
             else
 				setContentView_(MainView)
@@ -181,27 +202,30 @@ script AppDelegate
     
     on StartClearCache_(sender)
         --Use MyriadHelpers to show cache window as sheet
+        log_event("Clear Cache started...")
         tell CacheWindow to showOver_(MainWindow)
-        log_event("Clear Cache started")
+        log_event("Clear Cache started...Finished")
     end StartClearCache_
     
     on CancelClearCache_(sender)
         --Use MyriadHelpers to close cache sheet
-		tell current application's NSApp to endSheet_(CacheWindow)
         log_event("Cancel Clear Cache")
+		tell current application's NSApp to endSheet_(CacheWindow)
 	end ClearCacheCancelButton_
     
     on OpenPreferences_(sender)
         --open preferences window
+        log_event("Open Preferences...")
         PreferencesWindow's makeKeyAndOrderFront_(me)
-        log_event("Opened Preferences")
         updateSavefolderLocLabel_(me)
+        updateRawfolderLocLabel_(me)
+        log_event("Open Preferences...Finished")
     end OpenPreferences_
     
     on ReshootNew_(sender)
         --Open reshoot/New Window
-        ReshootWindow's makeKeyAndOrderFront_(me)
         log_event("Opened Reshoot-New Window")
+        ReshootWindow's makeKeyAndOrderFront_(me)
     end ReshootNew_
     
     (* ======================================================================
@@ -216,24 +240,52 @@ script AppDelegate
             setStringValue_(saveFolderloc)
             setEditable_(0)
         end tell
-        log_event("Update save folder location text field.")
+        log_event("Update save folder location text field...")
     end updateSavefolderLocLabel_
+    
+    on updateRawfolderLocLabel_(sender)
+        --Update the text field containing the save folder location
+        global rawFolderloc
+        tell rawFolderloclabel
+            setEditable_(1)
+            setStringValue_(rawFolderloc)
+            setEditable_(0)
+        end tell
+        log_event("Update raw folder location text field...")
+    end updateRawfolderLocLabel_
     
     on changeSaveFolderloc_(sender)
         --Change the save folder location
         global saveFolderloc
+        log_event("Change Save folder location...")
         set choice to (choose folder) as string
         tell defaults to setObject_forKey_(choice, "saveFolderloc")
         retrieveDefaults_(me)
-        log_event("Change Save folder location...")
+        log_event("Change Save folder location...Finished")
     end changeSaveFolderloc_
+    
+    on changeRawFolderloc_(sender)
+        --Change the save folder location
+        global rawFolderloc
+        log_event("Change Raw folder location...")
+        set choice to (choose folder) as string
+        tell defaults to setObject_forKey_(choice, "rawFolderloc")
+        retrieveDefaults_(me)
+        log_event("Change Raw folder location...Finished")
+    end changeRawFolderloc_
     
     on retrieveDefaults_(sender)
         --Read the preferences from the preferences file
         global saveFolderloc
-        tell defaults to set saveFolderloc to objectForKey_("saveFolderloc")
+        global rawFolderloc
         log_event("Read in Preferences...")
+        tell defaults
+            set saveFolderloc to objectForKey_("saveFolderloc")
+            set rawFolderloc to objectForKey_("rawFolderloc")
+        end tell
         log_event("Save Folder Location: " & saveFolderloc)
+        log_event("Save Folder Location: " & rawFolderloc)
+        log_event("Read in Preferences...Finished")
     end retrieveDefaults_
     
     on dropletButtons_(sender)
@@ -301,7 +353,7 @@ script AppDelegate
             
             on error errmsg
                 tell me to display dialog "Error when attempting to replace droplet"
-                log_event("Add/New Droplet Failed...")
+                log_event("Add/New Droplet FAILED...")
         end try
     end dropletButtons_
     
@@ -315,5 +367,41 @@ script AppDelegate
         set theLine to (do shell script "date  +'%Y-%m-%d %H:%M:%S'" as string) & " " & themessage
         do shell script "echo " & theLine & " >> ~/Library/Logs/RoundHouseHelper.log"
     end log_event
+    
+    (* ======================================================================
+                                    Testing!
+     ====================================================================== *)
+    
+    --testing
+    property thestate : 1
+    
+    --testing
+    on thestate_(sender)
+        if thestate = 0 then
+            set thestate to 1
+            else
+            set thestate to 0
+        end if
+    end thestate
+    
+    --testing
+    on loopthing()
+        log "still running!"
+        if thestate = 1 then
+            performSelector_withObject_afterDelay_("loopthing", missing value, 1)
+            else
+            performSelector_withObject_afterDelay_("pausething", missing value, 1)
+        end if
+    end loopthing
+    
+    --testing
+    on pausething()
+        log "I'm waiting!"
+        if thestate = 1 then
+            performSelector_withObject_afterDelay_("loopthing", missing value, 1)
+            else
+            performSelector_withObject_afterDelay_("pausething", missing value, 1)
+        end if
+    end pausething
     
 end script
