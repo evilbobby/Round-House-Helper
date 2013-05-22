@@ -25,12 +25,70 @@ script AppDelegate
     property drop1Indicator : missing value
     property drop2Indicator : missing value
     property drop3Indicator : missing value
+    --Cache Window
+    property cacheIndicator : missing value
+    property cachecancelbutton : missing value
+    property cachepausebutton : missing value
+    property cachelabel : missing value
+    property cancelCache : false
+    property pauseCache : false
     
     
     (* ======================================================================
                             Handlers for Processing! 
      ====================================================================== *)
     
+    on clearCache()
+        global clearCacheTimer
+        global ClearCacheCountDown
+        global RoundHouseHelper_folder
+        
+        --Make sure the cancel button was not pressed
+        if ClearCacheCountDown = true and cancelCache = false and pauseCache = false then
+            --Do 5 second countdown
+            log "Clear Cache..." & clearCacheTimer
+            tell cacheIndicator to setIntValue_(clearCacheTimer - 1)
+            tell cachelabel to setStringValue_("Preparing to Clear Cache...(" & (6 - clearCacheTimer) & ")")
+            set clearCacheTimer to clearCacheTimer + 1
+            if clearCacheTimer = 7 then
+                set ClearCacheCountDown to false
+                set clearCacheTimer to 1
+            end if
+            performSelector_withObject_afterDelay_("clearCache", missing value, 1)
+        else if ClearCacheCountDown = false and cancelCache = false and pauseCache = false then
+            --After the coutdown we can now clear the cache
+            set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive"}
+            tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
+            log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
+            --delete all files in folder
+            do shell script "rm -rf " & quoted form of POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
+            set clearCacheTimer to clearCacheTimer + 1
+            if clearCacheTimer = 7 then
+                set clearCacheTimer to 1
+                set ClearCacheCountDown to true
+                tell cachelabel to setStringValue_("Clearing Cache...DONE!")
+                delay 1
+                tell current application's NSApp to endSheet_(CacheWindow)
+                tell cacheIndicator to setIntValue_(0)
+                log_event("Clear Cache...Finished")
+            else
+                performSelector_withObject_afterDelay_("clearCache", missing value, 0.15)
+            end if
+        else if pauseCache = true and cancelCache = false then
+            --Pause clear cache
+            performSelector_withObject_afterDelay_("clearCache", missing value, 2)
+        else if cancelCache = true then
+            --End clear Cache
+            set clearCacheTimer to 1
+            set ClearCacheCountDown to true
+            tell cachelabel to setStringValue_("Clearing Cache...CANCELED!")
+            delay 1
+            tell current application's NSApp to endSheet_(CacheWindow)
+            tell cacheIndicator to setIntValue_(0)
+            set cancelCache to false
+            log_event("Clear Cache...CANCELED BY USER")
+        end if
+    end ClearCache_
     
     (* ======================================================================
                         Handlers for startup & shutdown! 
@@ -42,6 +100,9 @@ script AppDelegate
         global drop2Name
         global drop3Name
         global initializing
+        global clearCacheTimer
+        global ClearCacheCountDown
+        global RoundHouseHelper_folder
         
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to true
@@ -50,11 +111,18 @@ script AppDelegate
         set drop1Name to "Download1_Droplet"
         set drop2Name to "Download2_Droplet"
         set drop3Name to "Download3_Droplet"
+        --ClearCache
+        set clearCacheTimer to 1
+        set ClearCacheCountDown to true
+        --Roundhousehelper cache folder
+        set RoundHouseHelper_folder to (path to library folder) & "Caches:RoundHouseHelper:" as string
         
         log_event("Default Globals Loaded...")
     end defineGlobals
     
     on checkCacheFolders_(sender)
+        global RoundHouseHelper_folder
+        
         log_event("Checking for Cache Folders...")
         set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive", "Droplets"}
         set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
@@ -63,10 +131,10 @@ script AppDelegate
             tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
             log_event("Cache Folder 'RoundHouseHelper' created at... " & CacheFolderLoc as string)
         end try
-        set RoundHouseHelper_folder to ((path to library folder) & "Caches:RoundHouseHelper:" as string) as alias
+        --set RoundHouseHelper_folder to ((path to library folder) & "Caches:RoundHouseHelper:" as string) as alias
         repeat with aFolder in CacheFolderList
             try
-                tell application "Finder" to make new folder at RoundHouseHelper_folder with properties {name:aFolder}
+                tell application "Finder" to make new folder at (RoundHouseHelper_folder as alias) with properties {name:aFolder}
                 log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
             end try
         end repeat
@@ -135,7 +203,7 @@ script AppDelegate
         checkDroplets_(me)
         
         --testing
-        loopthing()
+        --loopthing()
         
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to false
@@ -202,16 +270,26 @@ script AppDelegate
     
     on StartClearCache_(sender)
         --Use MyriadHelpers to show cache window as sheet
-        log_event("Clear Cache started...")
+        log_event("Clear Cache...")
         tell CacheWindow to showOver_(MainWindow)
-        log_event("Clear Cache started...Finished")
+        clearCache()
     end StartClearCache_
     
     on CancelClearCache_(sender)
         --Use MyriadHelpers to close cache sheet
-        log_event("Cancel Clear Cache")
-		tell current application's NSApp to endSheet_(CacheWindow)
+        set cancelCache to true
 	end ClearCacheCancelButton_
+    
+    on PauseClearCache_(sender)
+        --Pause the Clear Cache
+        if pauseCache = false then
+            log_event("Clear Cache...Paused")
+            set pauseCache to true
+        else
+            log_event("Clear Cache...Resumed")
+            set pauseCache to false
+        end if
+	end PauseCacheCancelButton_
     
     on OpenPreferences_(sender)
         --open preferences window
@@ -379,7 +457,7 @@ script AppDelegate
     on thestate_(sender)
         if thestate = 0 then
             set thestate to 1
-            else
+        else
             set thestate to 0
         end if
     end thestate
@@ -389,7 +467,7 @@ script AppDelegate
         log "still running!"
         if thestate = 1 then
             performSelector_withObject_afterDelay_("loopthing", missing value, 1)
-            else
+        else
             performSelector_withObject_afterDelay_("pausething", missing value, 1)
         end if
     end loopthing
@@ -399,7 +477,7 @@ script AppDelegate
         log "I'm waiting!"
         if thestate = 1 then
             performSelector_withObject_afterDelay_("loopthing", missing value, 1)
-            else
+        else
             performSelector_withObject_afterDelay_("pausething", missing value, 1)
         end if
     end pausething

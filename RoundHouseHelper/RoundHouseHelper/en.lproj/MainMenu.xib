@@ -813,7 +813,6 @@
 								<int key="NSCellFlags2">0</int>
 								<string key="NSCellIdentifier">_NS:9</string>
 								<reference key="NSControlView" ref="805164008"/>
-								<double key="NSValue">-1</double>
 								<double key="NSMaxValue">5</double>
 								<double key="NSCriticalValue">6</double>
 								<int key="NSIndicatorStyle">2</int>
@@ -1203,31 +1202,6 @@
 					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
 					<array class="NSMutableArray" key="NSSubviews">
-						<object class="NSButton" id="695463088">
-							<reference key="NSNextResponder" ref="84484701"/>
-							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{14, 112}, {153, 32}}</string>
-							<reference key="NSSuperview" ref="84484701"/>
-							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView" ref="965558706"/>
-							<string key="NSReuseIdentifierKey">_NS:9</string>
-							<bool key="NSEnabled">YES</bool>
-							<object class="NSButtonCell" key="NSCell" id="214430370">
-								<int key="NSCellFlags">67108864</int>
-								<int key="NSCellFlags2">134217728</int>
-								<string key="NSContents">Clear Cache sheet</string>
-								<reference key="NSSupport" ref="984282279"/>
-								<string key="NSCellIdentifier">_NS:9</string>
-								<reference key="NSControlView" ref="695463088"/>
-								<int key="NSButtonFlags">-2038284288</int>
-								<int key="NSButtonFlags2">129</int>
-								<string key="NSAlternateContents"/>
-								<string key="NSKeyEquivalent"/>
-								<int key="NSPeriodicDelay">200</int>
-								<int key="NSPeriodicInterval">25</int>
-							</object>
-							<bool key="NSAllowsLogicalLayoutDirection">NO</bool>
-						</object>
 						<object class="NSButton" id="965558706">
 							<reference key="NSNextResponder" ref="84484701"/>
 							<int key="NSvFlags">268</int>
@@ -1305,7 +1279,7 @@
 						<object class="NSButton" id="213839372">
 							<reference key="NSNextResponder" ref="84484701"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{256, 112}, {82, 32}}</string>
+							<string key="NSFrame">{{14, 112}, {139, 32}}</string>
 							<reference key="NSSuperview" ref="84484701"/>
 							<reference key="NSWindow"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
@@ -1313,7 +1287,7 @@
 							<object class="NSButtonCell" key="NSCell" id="170873241">
 								<int key="NSCellFlags">67108864</int>
 								<int key="NSCellFlags2">134217728</int>
-								<string key="NSContents">Button</string>
+								<string key="NSContents">Clear the Cache</string>
 								<reference key="NSSupport" ref="984282279"/>
 								<string key="NSCellIdentifier">_NS:9</string>
 								<reference key="NSControlView" ref="213839372"/>
@@ -1330,7 +1304,7 @@
 					<string key="NSFrameSize">{475, 160}</string>
 					<reference key="NSSuperview"/>
 					<reference key="NSWindow"/>
-					<reference key="NSNextKeyView" ref="695463088"/>
+					<reference key="NSNextKeyView"/>
 					<string key="NSReuseIdentifierKey">_NS:20</string>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1920, 1178}}</string>
@@ -1472,14 +1446,6 @@
 					<int key="connectionID">843</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">StartClearCache:</string>
-						<reference key="source" ref="976324537"/>
-						<reference key="destination" ref="695463088"/>
-					</object>
-					<int key="connectionID">844</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">savefolderlocLabel</string>
 						<reference key="source" ref="976324537"/>
@@ -1590,6 +1556,54 @@
 						<reference key="destination" ref="988129561"/>
 					</object>
 					<int key="connectionID">924</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">cachecancelbutton</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="252132787"/>
+					</object>
+					<int key="connectionID">925</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">cacheIndicator</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="805164008"/>
+					</object>
+					<int key="connectionID">926</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">cachepausebutton</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="153143667"/>
+					</object>
+					<int key="connectionID">927</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">cachelabel</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="638280146"/>
+					</object>
+					<int key="connectionID">928</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">StartClearCache:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="213839372"/>
+					</object>
+					<int key="connectionID">932</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">PauseClearCache:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="153143667"/>
+					</object>
+					<int key="connectionID">933</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -2267,7 +2281,6 @@
 						<reference key="object" ref="84484701"/>
 						<array class="NSMutableArray" key="children">
 							<reference ref="965558706"/>
-							<reference ref="695463088"/>
 							<reference ref="469518232"/>
 							<reference ref="611765443"/>
 							<reference ref="213839372"/>
@@ -2292,19 +2305,6 @@
 						<int key="objectID">834</int>
 						<reference key="object" ref="27889204"/>
 						<reference key="parent" ref="965558706"/>
-					</object>
-					<object class="IBObjectRecord">
-						<int key="objectID">825</int>
-						<reference key="object" ref="695463088"/>
-						<array class="NSMutableArray" key="children">
-							<reference ref="214430370"/>
-						</array>
-						<reference key="parent" ref="84484701"/>
-					</object>
-					<object class="IBObjectRecord">
-						<int key="objectID">833</int>
-						<reference key="object" ref="214430370"/>
-						<reference key="parent" ref="695463088"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">841</int>
@@ -2529,9 +2529,7 @@
 				<boolean value="NO" key="821.NSWindowTemplate.visibleAtLaunch"/>
 				<string key="822.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="824.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
-				<string key="825.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="83.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
-				<string key="833.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="834.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="838.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="841.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -2558,7 +2556,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">924</int>
+			<int key="maxID">933</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2568,6 +2566,7 @@
 					<dictionary class="NSMutableDictionary" key="actions">
 						<string key="CancelClearCache:">id</string>
 						<string key="OpenPreferences:">id</string>
+						<string key="PauseClearCache:">id</string>
 						<string key="ReshootNew:">id</string>
 						<string key="StartClearCache:">id</string>
 						<string key="applicationShouldTerminate:">id</string>
@@ -2590,6 +2589,10 @@
 						</object>
 						<object class="IBActionInfo" key="OpenPreferences:">
 							<string key="name">OpenPreferences:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="PauseClearCache:">
+							<string key="name">PauseClearCache:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="ReshootNew:">
@@ -2657,6 +2660,10 @@
 						<string key="ReshootWindow">id</string>
 						<string key="SearchView">id</string>
 						<string key="blankView">id</string>
+						<string key="cacheIndicator">id</string>
+						<string key="cachecancelbutton">id</string>
+						<string key="cachelabel">id</string>
+						<string key="cachepausebutton">id</string>
 						<string key="defaults">id</string>
 						<string key="drop1Indicator">id</string>
 						<string key="drop2Indicator">id</string>
@@ -2691,6 +2698,22 @@
 						</object>
 						<object class="IBToOneOutletInfo" key="blankView">
 							<string key="name">blankView</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cacheIndicator">
+							<string key="name">cacheIndicator</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cachecancelbutton">
+							<string key="name">cachecancelbutton</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cachelabel">
+							<string key="name">cachelabel</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cachepausebutton">
+							<string key="name">cachepausebutton</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBToOneOutletInfo" key="defaults">
