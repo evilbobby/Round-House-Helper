@@ -66,7 +66,7 @@ script AppDelegate
             if clearCacheTimer = 7 then
                 set clearCacheTimer to 1
                 set ClearCacheCountDown to true
-                tell cachelabel to setStringValue_("Clearing Cache...DONE!")
+                tell cachelabel to setStringValue_("Clearing Cache...Done!")
                 delay 1
                 tell current application's NSApp to endSheet_(CacheWindow)
                 tell cacheIndicator to setIntValue_(0)
@@ -76,16 +76,22 @@ script AppDelegate
             end if
         else if pauseCache = true and cancelCache = false then
             --Pause clear cache
-            performSelector_withObject_afterDelay_("clearCache", missing value, 2)
+            performSelector_withObject_afterDelay_("clearCache", missing value, 1)
         else if cancelCache = true then
             --End clear Cache
             set clearCacheTimer to 1
             set ClearCacheCountDown to true
-            tell cachelabel to setStringValue_("Clearing Cache...CANCELED!")
+            tell cachelabel to setStringValue_("Clearing Cache...Canceled!")
             delay 1
             tell current application's NSApp to endSheet_(CacheWindow)
             tell cacheIndicator to setIntValue_(0)
+            tell cachelabel to setStringValue_("Preparing to Clear Cache...")
             set cancelCache to false
+            --try to reset the pause button
+            try
+                tell cachepausebutton to setState_(0)
+                set pauseCache to false
+            end try
             log_event("Clear Cache...CANCELED BY USER")
         end if
     end ClearCache_
