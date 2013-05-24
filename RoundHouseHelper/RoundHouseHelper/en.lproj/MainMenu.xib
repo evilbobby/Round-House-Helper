@@ -600,7 +600,7 @@
 				<string key="NSClassName">NSView</string>
 			</object>
 			<object class="NSCustomView" id="1034964201">
-				<nil key="NSNextResponder"/>
+				<reference key="NSNextResponder"/>
 				<int key="NSvFlags">45</int>
 				<array class="NSMutableArray" key="NSSubviews">
 					<object class="NSButton" id="6812064">
@@ -700,6 +700,7 @@
 					</object>
 				</array>
 				<string key="NSFrameSize">{475, 61}</string>
+				<reference key="NSSuperview"/>
 				<reference key="NSNextKeyView" ref="6812064"/>
 				<string key="NSClassName">NSView</string>
 			</object>
@@ -2580,7 +2581,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">944</int>
+			<int key="maxID">951</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">

@@ -301,8 +301,8 @@ script AppDelegate
         --open preferences window
         log_event("Open Preferences...")
         PreferencesWindow's makeKeyAndOrderFront_(me)
-        updateSavefolderLocLabel_(me)
-        updateRawfolderLocLabel_(me)
+        updateSavefolderLocLabel()
+        updateRawfolderLocLabel()
         log_event("Open Preferences...Finished")
     end OpenPreferences_
     
@@ -345,7 +345,7 @@ script AppDelegate
                             Handlers for Preferences!
      ====================================================================== *)
     
-    on updateSavefolderLocLabel_(sender)
+    on updateSavefolderLocLabel()
         --Update the text field containing the save folder location
         global saveFolderloc
         tell savefolderlocLabel
@@ -354,9 +354,9 @@ script AppDelegate
             setEditable_(0)
         end tell
         log_event("Update save folder location text field...")
-    end updateSavefolderLocLabel_
+    end updateSavefolderLocLabel
     
-    on updateRawfolderLocLabel_(sender)
+    on updateRawfolderLocLabel()
         --Update the text field containing the save folder location
         global rawFolderloc
         tell rawFolderloclabel
@@ -365,7 +365,7 @@ script AppDelegate
             setEditable_(0)
         end tell
         log_event("Update raw folder location text field...")
-    end updateRawfolderLocLabel_
+    end updateRawfolderLocLabel
     
     on changeSaveFolderloc_(sender)
         --Change the save folder location
