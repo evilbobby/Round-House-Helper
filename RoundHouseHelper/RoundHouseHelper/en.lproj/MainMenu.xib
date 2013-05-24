@@ -410,7 +410,7 @@
 			<object class="NSWindowTemplate" id="626063618">
 				<int key="NSWindowStyleMask">17</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{230, 900}, {475, 61}}</string>
+				<string key="NSWindowRect">{{230, 900}, {425, 61}}</string>
 				<int key="NSWTFlags">-1535638528</int>
 				<string key="NSWindowTitle">Rehoot/New</string>
 				<string key="NSWindowClass">NSPanel</string>
@@ -423,7 +423,7 @@
 						<object class="NSButton" id="873941748">
 							<reference key="NSNextResponder" ref="65241400"/>
 							<int key="NSvFlags">289</int>
-							<string key="NSFrame">{{379, 13}, {82, 32}}</string>
+							<string key="NSFrame">{{329, 13}, {82, 32}}</string>
 							<reference key="NSSuperview" ref="65241400"/>
 							<reference key="NSWindow"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
@@ -520,7 +520,7 @@
 							<bool key="NSAllowsLogicalLayoutDirection">NO</bool>
 						</object>
 					</array>
-					<string key="NSFrameSize">{475, 61}</string>
+					<string key="NSFrameSize">{425, 61}</string>
 					<reference key="NSSuperview"/>
 					<reference key="NSWindow"/>
 					<reference key="NSNextKeyView" ref="990640727"/>
@@ -764,7 +764,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="871810871">
 								<int key="NSCellFlags">68157504</int>
 								<int key="NSCellFlags2">4195328</int>
-								<string key="NSContents">Preparing to clear Cache...</string>
+								<string key="NSContents">Preparing to Clear Cache...</string>
 								<reference key="NSSupport" ref="762612903"/>
 								<string key="NSCellIdentifier">_NS:1535</string>
 								<reference key="NSControlView" ref="638280146"/>
@@ -1304,7 +1304,7 @@
 					<string key="NSFrameSize">{475, 160}</string>
 					<reference key="NSSuperview"/>
 					<reference key="NSWindow"/>
-					<reference key="NSNextKeyView"/>
+					<reference key="NSNextKeyView" ref="213839372"/>
 					<string key="NSReuseIdentifierKey">_NS:20</string>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1920, 1178}}</string>
@@ -1436,14 +1436,6 @@
 						<reference key="destination" ref="609285721"/>
 					</object>
 					<int key="connectionID">820</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">ReshootNew:</string>
-						<reference key="source" ref="976324537"/>
-						<reference key="destination" ref="965558706"/>
-					</object>
-					<int key="connectionID">843</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -1606,6 +1598,46 @@
 					<int key="connectionID">933</int>
 				</object>
 				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">ReshootAButton:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="990640727"/>
+					</object>
+					<int key="connectionID">939</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">ReshootBButton:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="970934658"/>
+					</object>
+					<int key="connectionID">940</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">NewButton:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="798034714"/>
+					</object>
+					<int key="connectionID">941</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">ReshootNew:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="622787432"/>
+					</object>
+					<int key="connectionID">943</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">cancelReshootNewButton:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="873941748"/>
+					</object>
+					<int key="connectionID">944</int>
+				</object>
+				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">parentWindow</string>
 						<reference key="source" ref="95815685"/>
@@ -1620,14 +1652,6 @@
 						<reference key="destination" ref="179280355"/>
 					</object>
 					<int key="connectionID">678</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">orderOut:</string>
-						<reference key="source" ref="626063618"/>
-						<reference key="destination" ref="873941748"/>
-					</object>
-					<int key="connectionID">751</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
@@ -2024,10 +2048,10 @@
 						<int key="objectID">734</int>
 						<reference key="object" ref="65241400"/>
 						<array class="NSMutableArray" key="children">
-							<reference ref="873941748"/>
 							<reference ref="970934658"/>
 							<reference ref="798034714"/>
 							<reference ref="990640727"/>
+							<reference ref="873941748"/>
 						</array>
 						<reference key="parent" ref="626063618"/>
 					</object>
@@ -2556,7 +2580,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">933</int>
+			<int key="maxID">944</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2565,17 +2589,22 @@
 					<string key="superclassName">NSObject</string>
 					<dictionary class="NSMutableDictionary" key="actions">
 						<string key="CancelClearCache:">id</string>
+						<string key="NewButton:">id</string>
 						<string key="OpenPreferences:">id</string>
 						<string key="PauseClearCache:">id</string>
+						<string key="ReshootAButton:">id</string>
+						<string key="ReshootBButton:">id</string>
 						<string key="ReshootNew:">id</string>
 						<string key="StartClearCache:">id</string>
 						<string key="applicationShouldTerminate:">id</string>
 						<string key="applicationWillFinishLaunching:">id</string>
+						<string key="cancelReshootNewButton:">id</string>
 						<string key="changeRawFolderloc:">id</string>
 						<string key="changeSaveFolderloc:">id</string>
 						<string key="changeView:">id</string>
 						<string key="checkCacheFolders:">id</string>
 						<string key="checkDroplets:">id</string>
+						<string key="closeReshootNew:">id</string>
 						<string key="dropletButtons:">id</string>
 						<string key="retrieveDefaults:">id</string>
 						<string key="thestate:">id</string>
@@ -2587,12 +2616,24 @@
 							<string key="name">CancelClearCache:</string>
 							<string key="candidateClassName">id</string>
 						</object>
+						<object class="IBActionInfo" key="NewButton:">
+							<string key="name">NewButton:</string>
+							<string key="candidateClassName">id</string>
+						</object>
 						<object class="IBActionInfo" key="OpenPreferences:">
 							<string key="name">OpenPreferences:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="PauseClearCache:">
 							<string key="name">PauseClearCache:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ReshootAButton:">
+							<string key="name">ReshootAButton:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ReshootBButton:">
+							<string key="name">ReshootBButton:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="ReshootNew:">
@@ -2609,6 +2650,10 @@
 						</object>
 						<object class="IBActionInfo" key="applicationWillFinishLaunching:">
 							<string key="name">applicationWillFinishLaunching:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="cancelReshootNewButton:">
+							<string key="name">cancelReshootNewButton:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="changeRawFolderloc:">
@@ -2629,6 +2674,10 @@
 						</object>
 						<object class="IBActionInfo" key="checkDroplets:">
 							<string key="name">checkDroplets:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="closeReshootNew:">
+							<string key="name">closeReshootNew:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="dropletButtons:">

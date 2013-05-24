@@ -32,6 +32,8 @@ script AppDelegate
     property cachelabel : missing value
     property cancelCache : false
     property pauseCache : false
+    --Reshoot Window
+    property cancelReshootNew : false
     
     
     (* ======================================================================
@@ -66,7 +68,7 @@ script AppDelegate
             if clearCacheTimer = 7 then
                 set clearCacheTimer to 1
                 set ClearCacheCountDown to true
-                tell cachelabel to setStringValue_("Clearing Cache...DONE!")
+                tell cachelabel to setStringValue_("Clearing Cache...Done!")
                 delay 1
                 tell current application's NSApp to endSheet_(CacheWindow)
                 tell cacheIndicator to setIntValue_(0)
@@ -76,16 +78,23 @@ script AppDelegate
             end if
         else if pauseCache = true and cancelCache = false then
             --Pause clear cache
-            performSelector_withObject_afterDelay_("clearCache", missing value, 2)
+            performSelector_withObject_afterDelay_("clearCache", missing value, 1)
         else if cancelCache = true then
             --End clear Cache
             set clearCacheTimer to 1
             set ClearCacheCountDown to true
-            tell cachelabel to setStringValue_("Clearing Cache...CANCELED!")
+            tell cachelabel to setStringValue_("Clearing Cache...Canceled!")
+            set cancelCache to false
             delay 1
             tell current application's NSApp to endSheet_(CacheWindow)
             tell cacheIndicator to setIntValue_(0)
+            tell cachelabel to setStringValue_("Preparing to Clear Cache...")
             set cancelCache to false
+            --try to reset the pause button
+            try
+                tell cachepausebutton to setState_(0)
+                set pauseCache to false
+            end try
             log_event("Clear Cache...CANCELED BY USER")
         end if
     end ClearCache_
@@ -202,9 +211,6 @@ script AppDelegate
         --Check for Droplets
         checkDroplets_(me)
         
-        --testing
-        --loopthing()
-        
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to false
 	end applicationWillFinishLaunching_
@@ -302,9 +308,38 @@ script AppDelegate
     
     on ReshootNew_(sender)
         --Open reshoot/New Window
-        log_event("Opened Reshoot-New Window")
-        ReshootWindow's makeKeyAndOrderFront_(me)
+        log_event("Reshoot-New...")
+        tell ReshootWindow to showOver_(MainWindow)
+        --ReshootWindow's makeKeyAndOrderFront_(me)
     end ReshootNew_
+    
+    on closeReshootNew_(sender)
+        --Use MyriadHelpers to close cache sheet
+        tell current application's NSApp to endSheet_(ReshootWindow)
+        if cancelReshootNew = true then
+            log_event("Reshoot-New...Canceled by user")
+            set cancelReshootNew to false
+        else
+            log_event("Reshoot-New...Finished")
+        end if
+	end closeReshootNew_
+    
+    on ReshootAButton_(sender)
+        closeReshootNew_(me)
+    end ReshootAButton_
+        
+    on ReshootBButton_(sender)
+        closeReshootNew_(me)
+    end ReshootBButton_
+        
+    on NewButton_(sender)
+        closeReshootNew_(me)
+    end NewButton_
+    
+    on cancelReshootNewButton_(sender)
+        set cancelReshootNew to true
+        closeReshootNew_(me)
+    end cancelReshootNewButton_
     
     (* ======================================================================
                             Handlers for Preferences!
