@@ -546,7 +546,7 @@
 						<object class="NSTextFieldCell" key="NSCell" id="967712135">
 							<int key="NSCellFlags">68157504</int>
 							<int key="NSCellFlags2">138413056</int>
-							<string key="NSContents">Looking for images...</string>
+							<string key="NSContents">Press Start</string>
 							<reference key="NSSupport" ref="762612903"/>
 							<string key="NSCellIdentifier">_NS:1535</string>
 							<reference key="NSControlView" ref="164142772"/>
@@ -558,7 +558,7 @@
 					<object class="NSButton" id="988129561">
 						<reference key="NSNextResponder" ref="974548065"/>
 						<int key="NSvFlags">289</int>
-						<string key="NSFrame">{{384, 13}, {77, 32}}</string>
+						<string key="NSFrame">{{388, 13}, {70, 32}}</string>
 						<reference key="NSSuperview" ref="974548065"/>
 						<reference key="NSWindow"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
@@ -566,7 +566,7 @@
 						<object class="NSButtonCell" key="NSCell" id="117793614">
 							<int key="NSCellFlags">67108864</int>
 							<int key="NSCellFlags2">134217728</int>
-							<string key="NSContents">Pause</string>
+							<string key="NSContents">Start</string>
 							<reference key="NSSupport" ref="984282279"/>
 							<string key="NSCellIdentifier">_NS:9</string>
 							<reference key="NSControlView" ref="988129561"/>
@@ -600,7 +600,7 @@
 				<string key="NSClassName">NSView</string>
 			</object>
 			<object class="NSCustomView" id="1034964201">
-				<reference key="NSNextResponder"/>
+				<nil key="NSNextResponder"/>
 				<int key="NSvFlags">45</int>
 				<array class="NSMutableArray" key="NSSubviews">
 					<object class="NSButton" id="6812064">
@@ -700,7 +700,6 @@
 					</object>
 				</array>
 				<string key="NSFrameSize">{475, 61}</string>
-				<reference key="NSSuperview"/>
 				<reference key="NSNextKeyView" ref="6812064"/>
 				<string key="NSClassName">NSView</string>
 			</object>
@@ -1283,6 +1282,7 @@
 							<string key="NSFrame">{{14, 112}, {139, 32}}</string>
 							<reference key="NSSuperview" ref="84484701"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView" ref="965558706"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="170873241">
@@ -1543,14 +1543,6 @@
 					<int key="connectionID">923</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">changeView:</string>
-						<reference key="source" ref="976324537"/>
-						<reference key="destination" ref="988129561"/>
-					</object>
-					<int key="connectionID">924</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">cachecancelbutton</string>
 						<reference key="source" ref="976324537"/>
@@ -1637,6 +1629,70 @@
 						<reference key="destination" ref="873941748"/>
 					</object>
 					<int key="connectionID">944</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">MainBar1</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="155907935"/>
+					</object>
+					<int key="connectionID">952</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">MainBar2</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="1032181779"/>
+					</object>
+					<int key="connectionID">953</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">MainDetail1</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="330133896"/>
+					</object>
+					<int key="connectionID">954</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">MainDetail2</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="700309964"/>
+					</object>
+					<int key="connectionID">955</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">searchBar1</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="992145694"/>
+					</object>
+					<int key="connectionID">956</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">searchButton1</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="988129561"/>
+					</object>
+					<int key="connectionID">957</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">searchDetail1</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="164142772"/>
+					</object>
+					<int key="connectionID">958</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">searchViewButton1:</string>
+						<reference key="source" ref="976324537"/>
+						<reference key="destination" ref="988129561"/>
+					</object>
+					<int key="connectionID">959</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -2581,7 +2637,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">951</int>
+			<int key="maxID">959</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2608,9 +2664,8 @@
 						<string key="closeReshootNew:">id</string>
 						<string key="dropletButtons:">id</string>
 						<string key="retrieveDefaults:">id</string>
+						<string key="searchViewButton1:">id</string>
 						<string key="thestate:">id</string>
-						<string key="updateRawfolderLocLabel:">id</string>
-						<string key="updateSavefolderLocLabel:">id</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="actionInfosByName">
 						<object class="IBActionInfo" key="CancelClearCache:">
@@ -2689,21 +2744,21 @@
 							<string key="name">retrieveDefaults:</string>
 							<string key="candidateClassName">id</string>
 						</object>
+						<object class="IBActionInfo" key="searchViewButton1:">
+							<string key="name">searchViewButton1:</string>
+							<string key="candidateClassName">id</string>
+						</object>
 						<object class="IBActionInfo" key="thestate:">
 							<string key="name">thestate:</string>
-							<string key="candidateClassName">id</string>
-						</object>
-						<object class="IBActionInfo" key="updateRawfolderLocLabel:">
-							<string key="name">updateRawfolderLocLabel:</string>
-							<string key="candidateClassName">id</string>
-						</object>
-						<object class="IBActionInfo" key="updateSavefolderLocLabel:">
-							<string key="name">updateSavefolderLocLabel:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="CacheWindow">id</string>
+						<string key="MainBar1">id</string>
+						<string key="MainBar2">id</string>
+						<string key="MainDetail1">id</string>
+						<string key="MainDetail2">id</string>
 						<string key="MainView">id</string>
 						<string key="MainWindow">id</string>
 						<string key="PreferencesWindow">id</string>
@@ -2720,10 +2775,29 @@
 						<string key="drop3Indicator">id</string>
 						<string key="rawFolderloclabel">id</string>
 						<string key="savefolderlocLabel">id</string>
+						<string key="searchBar1">id</string>
+						<string key="searchButton1">id</string>
+						<string key="searchDetail1">id</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
 						<object class="IBToOneOutletInfo" key="CacheWindow">
 							<string key="name">CacheWindow</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="MainBar1">
+							<string key="name">MainBar1</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="MainBar2">
+							<string key="name">MainBar2</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="MainDetail1">
+							<string key="name">MainDetail1</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="MainDetail2">
+							<string key="name">MainDetail2</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBToOneOutletInfo" key="MainView">
@@ -2788,6 +2862,18 @@
 						</object>
 						<object class="IBToOneOutletInfo" key="savefolderlocLabel">
 							<string key="name">savefolderlocLabel</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="searchBar1">
+							<string key="name">searchBar1</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="searchButton1">
+							<string key="name">searchButton1</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="searchDetail1">
+							<string key="name">searchDetail1</string>
 							<string key="candidateClassName">id</string>
 						</object>
 					</dictionary>

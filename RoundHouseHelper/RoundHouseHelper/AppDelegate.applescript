@@ -19,6 +19,15 @@ script AppDelegate
     property CacheWindow : missing value
     property PreferencesWindow : missing value
     property ReshootWindow : missing value
+    --Main Processing Window
+    property MainBar1 : missing value
+    property MainBar2 : missing value
+    property MainDetail1 : missing value
+    property MainDetail2 : missing value
+    --Searching/Begin Window
+    property searchBar1 : missing value
+    property searchDetail1 : missing value
+    property searchButton1 : missing value
     --Preferences Window
     property savefolderlocLabel : missing value
     property rawFolderloclabel : missing value
@@ -40,6 +49,7 @@ script AppDelegate
                             Handlers for Processing! 
      ====================================================================== *)
     
+    --CLEAR CACHE HANDLER
     on clearCache()
         global clearCacheTimer
         global ClearCacheCountDown
@@ -103,6 +113,7 @@ script AppDelegate
                         Handlers for startup & shutdown! 
      ====================================================================== *)
     
+    --DEFINE GLOBALS
     on defineGlobals()
         global dropletFolder
         global drop1Name
@@ -112,7 +123,10 @@ script AppDelegate
         global clearCacheTimer
         global ClearCacheCountDown
         global RoundHouseHelper_folder
+        global curView
         
+        --Declare MainView as starting view
+        set curView to MainView
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to true
         --Droplet data
@@ -129,6 +143,7 @@ script AppDelegate
         log_event("Default Globals Loaded...")
     end defineGlobals
     
+    --CHECK FOR CACHE FOLDERS
     on checkCacheFolders_(sender)
         global RoundHouseHelper_folder
         
@@ -149,7 +164,8 @@ script AppDelegate
         end repeat
         log_event("Checking for Cache Folders...Finished")
     end checkCacheFolders_
-        
+    
+    --CHECK FOR DROPLETS
     on checkDroplets_(sender)
         global dropletsExist
         global dropletFolder
@@ -199,13 +215,12 @@ script AppDelegate
         log_event("==========PROGRAM INITILIZE=========")
         --Define Globals
         defineGlobals()
+        --Start at correct View
+        changeView_(me)
         --Set/Get Preferences
         tell current application's NSUserDefaults to set defaults to standardUserDefaults()
         tell defaults to registerDefaults_({saveFolderloc:((path to desktop)as string),rawFolderloc:((path to desktop)as string)})
         retrieveDefaults_(me)
-        --Declare MainView as starting view
-        global curView
-        set curView to MainView
         --Routine Check Cache folders
         checkCacheFolders_(me)
         --Check for Droplets
@@ -340,6 +355,28 @@ script AppDelegate
         set cancelReshootNew to true
         closeReshootNew_(me)
     end cancelReshootNewButton_
+    
+    on searchViewButton1_(sender)
+        --If we still haven't started, start searching
+        if title of sender as string is "Start" then
+            tell searchDetail1 to setStringValue_("Looking for images...")
+            tell searchButton1 to setTitle_("Pause")
+            tell searchButton1 to setState_(0)
+            tell searchBar1 to startAnimation_(me)
+            log_event("Looking for images...")
+        --If we started then, pause the search
+        else if title of sender as string = "Pause" and state of sender as string = "1" then
+            tell searchDetail1 to setStringValue_("Paused")
+            tell searchBar1 to stopAnimation_(me)
+            log_event("Looking for images...Paused by user")
+        --If we're paused, resume searching
+        else if state of sender as string = "0" then
+            tell searchDetail1 to setStringValue_("Looking for images...")
+            tell searchBar1 to startAnimation_(me)
+            log_event("Looking for images...Resumed by user")
+        end if
+            
+    end searchViewButton1_
     
     (* ======================================================================
                             Handlers for Preferences!
