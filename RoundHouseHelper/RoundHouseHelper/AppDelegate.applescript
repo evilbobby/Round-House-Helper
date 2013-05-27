@@ -24,6 +24,7 @@ script AppDelegate
     property MainBar2 : missing value
     property MainDetail1 : missing value
     property MainDetail2 : missing value
+    property ArchiveButton : missing value
     --Searching/Begin Window
     property searchBar1 : missing value
     property searchDetail1 : missing value
@@ -45,12 +46,30 @@ script AppDelegate
     property cancelReshootNew : false
     --Master State
     property pauseUser : false
+    property reqReshoot : false
     property lastTask : null
     property meFinished : false
+    property reshootSel : null
+    property CacheCleared : false
     --Download Folders
-    property Download1_folder : ((path to library folder) & "Caches:" & "RoundHouseHelper:Download1" as string) as alias
-	property Download2_folder : ((path to library folder) & "Caches:" & "RoundHouseHelper:Download2" as string) as alias
-	property Download3_folder : ((path to library folder) & "Caches:" & "RoundHouseHelper:Download3" as string) as alias
+    property Download1_folder : null
+	property Download2_folder : null
+	property Download3_folder : null
+    property Download4_folder : null
+    property processedFolder : null
+    --Droplets
+    property Droplet1Location : null
+    property Droplet2Location : null
+    property Droplet3Location : null
+    --Image Processing
+    property imageNumber : null
+    property processNumber : null
+    property processImage : null
+    property curDownloadFolder : null
+    property curBasename : null
+    property curDroplet : null
+    property processImageName : null
+    property Delay1 : 0.1
     
     
     (* ======================================================================
@@ -81,15 +100,17 @@ script AppDelegate
             tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
             log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
             --delete all files in folder
-            do shell script "rm -rf " & quoted form of POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
+            do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
             set clearCacheTimer to clearCacheTimer + 1
             if clearCacheTimer = 7 then
                 set clearCacheTimer to 1
                 set ClearCacheCountDown to true
                 tell cachelabel to setStringValue_("Clearing Cache...Done!")
                 delay 1
+                --reset window
                 tell current application's NSApp to endSheet_(CacheWindow)
                 tell cacheIndicator to setIntValue_(0)
+                set CacheCleared to true
                 log_event("Clear Cache...Finished")
             else
                 performSelector_withObject_afterDelay_("clearCache", missing value, 0.15)
@@ -104,20 +125,24 @@ script AppDelegate
             tell cachelabel to setStringValue_("Clearing Cache...Canceled!")
             set cancelCache to false
             delay 1
+            --Reset window
             tell current application's NSApp to endSheet_(CacheWindow)
             tell cacheIndicator to setIntValue_(0)
             tell cachelabel to setStringValue_("Preparing to Clear Cache...")
-            set cancelCache to false
             --try to reset the pause button
             try
                 tell cachepausebutton to setState_(0)
                 set pauseCache to false
             end try
             log_event("Clear Cache...CANCELED BY USER")
+            --if window is at Main then change to search window and reset for "start" button
+            resetForStart()
         end if
+        
+        if CacheCleared is true then performSelector_withObject_afterDelay_("startSearch", missing value, 1)
     end ClearCache_
 
-    --Search for an image in the chache folder
+    --WAIT FOR THE FIRST IMAGE IN CACHE
     on searchFor()
         log_event("Looking for images...")
         try
@@ -139,13 +164,177 @@ script AppDelegate
         end if
     end searchFor
     
+    --PREPARE FOR PROCESSING
     on Prepare()
-        log "Preparing..."
+        set lastTask to "Prepare"
+        log_event("Preparing...")
+        changeView_(me)
+        tell ArchiveButton to setEnabled_(0)
+        tell MainBar1 to startAnimation_(me)
+        tell MainBar2 to startAnimation_(me)
+        tell MainDetail1 to setStringValue_("Preparing to Process Images...")
+        tell MainDetail2 to setStringValue_("Total Progress...")
+        set processNumber to 1
+        
+        performSelector_withObject_afterDelay_("determineNextImage", missing value, 1)
     end Prepare
     
+    --DETERMINE THE NEXT IMAGE TO PROCESS
     on determineNextImage()
+        log_event("Determining next image...")
+        set lastTask to "determineNextImage"
+        
+        if processNumber ≥ 1 then
+            set imageNumber to processNumber
+            set curDownloadFolder to Download1_folder
+            set curBasename to "TopDown"
+            set curDroplet to Droplet1Location
+        end if
+        if processNumber > 1 then
+            set imageNumber to processNumber - 1
+            set curDownloadFolder to Download2_folder
+            set curBasename to "Hero"
+            set curDroplet to Droplet2Location
+        end if
+        if processNumber = 18 then
+            set imageNumber to processNumber - 16
+            set curDownloadFolder to Download1_folder
+            set curBasename to "TopDown"
+            set curDroplet to Droplet1Location
+        end if
+        if processNumber > 18 then
+            set imageNumber to processNumber - 18
+            set curDownloadFolder to Download3_folder
+            set curBasename to "Open"
+            set curDroplet to Droplet3Location
+        end if
+        
+        if imageNumber < 10 then set imageNumber to "0" & imageNumber as string
+        
+        set processImageName to "_" & curBasename & "_" & imageNumber & ".NEF" as string
+        set processNumber to processNumber + 1
+        
+        log_event("Next Image: " & processImageName)
+        
+        if pauseUser = true then
+            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            set pauseUser to false
+        else if reqReshoot = true then
+            performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
+            set reqReshoot to false
+        else
+            performSelector_withObject_afterDelay_("findNextImage", missing value, Delay1)
+        end if
     end determineNextImage
+    
+    --WAIT FOR THE NEXT IMAGE TO ENTER THE FOLDER
+    on findNextImage()
+        set lastTask to "findNextImage"
+        log "Waiting for image..."
+        
+        try
+            tell app "Finder" to set processImage to (every file in curDownloadFolder whose name contains processImageName)
+            if (item 1 of processImage) exists then
+                set processImage to item 1 of processImage
+                set meFinished to true
+                log_event("Image has arrived!")
+                log_event("Waiting for image to download...")
+            end if
+        end try
+        
+        if pauseUser = true then
+            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            set pauseUser to false
+        else if reqReshoot = true then
+            performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
+            set reqReshoot to false
+        else if meFinished = true then
+            performSelector_withObject_afterDelay_("waitForDownload", missing value, Delay1)
+            set meFinished to false
+        else
+            performSelector_withObject_afterDelay_("findNextImage", missing value, Delay1)
+        end if
+    end fineNextImage
+    
+    --WAIT FOR THE NEXT IMAGE TO FINISH DOWNLOADING
+    on waitForDownload()
+        set lastTask to "waitForDownload"
+        log "Waiting for download..."
+        
+        --try
+            tell app "Finder" to set oldsize to physical size of processImage
+            delay 0.1
+            tell app "Finder" to set newsize to physical size of processImage
+            if oldsize = newsize then
+                --set lookforme to (name of (item 1 of Images_to_process as alias) as string)
+                --set lookforme to (text 1 thru ((offset of the "." in lookforme) - 1) in lookforme)
+                log_event("Waiting for image to download...Done")
+                log_event("Sending image to Photoshop...")
+                --Send the image to photoshop using the correct droplet
+                tell app "Finder" to open processImage using curDroplet
+                set meFinished to true
+                log_event("Waiting for Droplet...")
+            end if
+        --end try
+        
+        if pauseUser = true then
+            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            set pauseUser to false
+        else if reqReshoot = true then
+            performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
+            set reqReshoot to false
+        else if meFinished = true then
+            performSelector_withObject_afterDelay_("waitForDroplet", missing value, Delay1)
+            set meFinished to false
+        else
+            performSelector_withObject_afterDelay_("waitForDownload", missing value, Delay1)
+        end if
+    end waitForDownload
+    
+    --WAIT FOR THE DROPLET TO SAVE THE IMAGE
+    on waitForDroplet()
+        set lastTask to "waitForDroplet"
+        log "Waiting for droplet..."
+        
+        try
+            tell app "Finder" to set processedContents to (every file in processedFolder) as text
+            set strippedName to (text 1 thru ((offset of the "." in processImageName) - 1) in processImageName)
+            if processedContents contains strippedName then
+                set meFinished to true
+                log_event("Waiting for Droplet...Done!")
+            end if
+        end try
+        
+        if pauseUser = true then
+            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            set pauseUser to false
+        else if reqReshoot = true then
+            performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
+            set reqReshoot to false
+        else if meFinished = true then
+            performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
+            set meFinished to false
+        else
+            performSelector_withObject_afterDelay_("waitForDroplet", missing value, 0.5)
+        end if
+    end waitForDroplet
+    
+    --RESHOOT HANDLER MANAGING NEXT TASK
+    on ReshootNewProcess()
+        if reshootSel = "A" then
+            log_event("Reshoot 'A' Selected...")
+            set processNumber to 1
             
+        else if reshootSel = "B" then
+            log_event("Reshoot 'B' Selected...")
+            set processNumber to 18
+            
+        else if reshootSel = "N" then
+            log_event("Reshoot 'New' Selected...")
+            
+        end if
+    end ReshootNewProcess
+    
     
     (* ======================================================================
                     Default "Application will..." Handlers
@@ -231,19 +420,23 @@ script AppDelegate
 		return {origin:{x:windowX, y:windowY}, |size|:{|width|:windowWidth, height:windowHeight}}
 	end adjustFrame_forScreenOfWindow_
     
-    on StartClearCache_(sender)
+    on StartClearCacheButton_(sender)
         --Use MyriadHelpers to show cache window as sheet
         log_event("Clear Cache...")
         tell CacheWindow to showOver_(MainWindow)
         clearCache()
-    end StartClearCache_
+    end StartClearCacheButton_
     
-    on CancelClearCache_(sender)
+    on StartClearCache()
+        StartClearCacheButton_(me)
+    end StartClearCache
+    
+    on CancelClearCacheButton_(sender)
         --Use MyriadHelpers to close cache sheet
         set cancelCache to true
 	end ClearCacheCancelButton_
     
-    on PauseClearCache_(sender)
+    on PauseClearCacheButton_(sender)
         --Pause the Clear Cache
         if pauseCache = false then
             log_event("Clear Cache...Paused")
@@ -265,7 +458,7 @@ script AppDelegate
     
     on ReshootNew_(sender)
         --Open reshoot/New Window
-        log_event("Reshoot-New...")
+        log_event("Reshoot-New window launched")
         tell ReshootWindow to showOver_(MainWindow)
         --ReshootWindow's makeKeyAndOrderFront_(me)
     end ReshootNew_
@@ -274,23 +467,27 @@ script AppDelegate
         --Use MyriadHelpers to close cache sheet
         tell current application's NSApp to endSheet_(ReshootWindow)
         if cancelReshootNew = true then
-            log_event("Reshoot-New...Canceled by user")
+            log_event("Reshoot-New window closed")
             set cancelReshootNew to false
-        else
-            log_event("Reshoot-New...Finished")
         end if
 	end closeReshootNew_
     
     on ReshootAButton_(sender)
         closeReshootNew_(me)
+        set reqReshoot to true
+        set reshootSel to "A"
     end ReshootAButton_
         
     on ReshootBButton_(sender)
         closeReshootNew_(me)
+        set reqReshoot to true
+        set reshootSel to "B"
     end ReshootBButton_
         
     on NewButton_(sender)
         closeReshootNew_(me)
+        set reqReshoot to true
+        set reshootSel to "N"
     end NewButton_
     
     on cancelReshootNewButton_(sender)
@@ -298,10 +495,11 @@ script AppDelegate
         closeReshootNew_(me)
     end cancelReshootNewButton_
 
-    on searchPauseButton_(sender)
+    on searchButton_(sender)
         if title of sender as string is "Start" then
-            --If we still haven't started, start searching
-            startSearch()
+            --If we still haven't started, clear cache then start searching
+            tell searchButton1 to setState_(0)
+            StartClearCacheButton_(me)
         else if title of sender as string = "Pause" and state of sender as string = "1" then
             --If we started then, pause the search
             set pauseUser to true
@@ -309,7 +507,16 @@ script AppDelegate
             --If we're paused, resume searching
             resumeSearch()
         end if
-    end searchPauseButton
+    end searchButton
+    
+    on resetForStart()
+        global curView
+        
+        tell searchDetail1 to setStringValue_("Press Start")
+        tell searchButton1 to setTitle_("Start")
+        tell searchBar1 to stopAnimation_(me)
+        if curView = MainView then changeView_(me)
+    end resetForStart
     
     on pauseSearch()
         tell searchDetail1 to setStringValue_("Paused")
@@ -327,11 +534,14 @@ script AppDelegate
     on startSearch()
         tell searchDetail1 to setStringValue_("Looking for images...")
         tell searchButton1 to setTitle_("Pause")
-        tell searchButton1 to setState_(0)
         tell searchBar1 to startAnimation_(me)
         log_event("Search Start...")
         searchFor()
     end startSearch
+    
+    on nextStep_(sender)
+        set meFinished to true
+    end nextStep_
 
     
     (* ======================================================================
@@ -380,13 +590,17 @@ script AppDelegate
             tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
             log_event("Cache Folder 'RoundHouseHelper' created at... " & CacheFolderLoc as string)
         end try
-        --set RoundHouseHelper_folder to ((path to library folder) & "Caches:RoundHouseHelper:" as string) as alias
         repeat with aFolder in CacheFolderList
             try
                 tell application "Finder" to make new folder at (RoundHouseHelper_folder as alias) with properties {name:aFolder}
                 log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
             end try
         end repeat
+        set Download1_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download1" as string) as alias
+        set Download2_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download2" as string) as alias
+        set Download3_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download3" as string) as alias
+        set Download4_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4" as string) as alias
+        set processedFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Processed" as string) as alias
         log_event("Checking for Cache Folders...Finished")
     end checkCacheFolders_
     
@@ -426,6 +640,9 @@ script AppDelegate
             else
             tell drop3Indicator to setIntValue_(3)
         end if
+        set Droplet1Location to (dropletFolder & drop1Name & ".app" as string) as alias
+        set Droplet2Location to (dropletFolder & drop2Name & ".app" as string) as alias
+        set Droplet3Location to (dropletFolder & drop3Name & ".app" as string) as alias
         log_event("Checking for Droplets...Finished")
     end checkDroplets_
     
