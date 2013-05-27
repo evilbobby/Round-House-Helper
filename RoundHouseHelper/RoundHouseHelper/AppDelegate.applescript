@@ -43,6 +43,14 @@ script AppDelegate
     property pauseCache : false
     --Reshoot Window
     property cancelReshootNew : false
+    --Master State
+    property pauseUser : false
+    property lastTask : null
+    property meFinished : false
+    --Download Folders
+    property Download1_folder : ((path to library folder) & "Caches:" & "RoundHouseHelper:Download1" as string) as alias
+	property Download2_folder : ((path to library folder) & "Caches:" & "RoundHouseHelper:Download2" as string) as alias
+	property Download3_folder : ((path to library folder) & "Caches:" & "RoundHouseHelper:Download3" as string) as alias
     
     
     (* ======================================================================
@@ -108,101 +116,35 @@ script AppDelegate
             log_event("Clear Cache...CANCELED BY USER")
         end if
     end ClearCache_
-    
-    (* ======================================================================
-                        Handlers for startup & shutdown! 
-     ====================================================================== *)
-    
-    --DEFINE GLOBALS
-    on defineGlobals()
-        global dropletFolder
-        global drop1Name
-        global drop2Name
-        global drop3Name
-        global initializing
-        global clearCacheTimer
-        global ClearCacheCountDown
-        global RoundHouseHelper_folder
-        global curView
-        
-        --Declare MainView as starting view
-        set curView to MainView
-        --initializing turned to false after applicationWillFinishLaunching
-        set initializing to true
-        --Droplet data
-        set dropletFolder to (path to library folder) & "Caches:RoundHouseHelper:Droplets:" as string
-        set drop1Name to "Download1_Droplet"
-        set drop2Name to "Download2_Droplet"
-        set drop3Name to "Download3_Droplet"
-        --ClearCache
-        set clearCacheTimer to 1
-        set ClearCacheCountDown to true
-        --Roundhousehelper cache folder
-        set RoundHouseHelper_folder to (path to library folder) & "Caches:RoundHouseHelper:" as string
-        
-        log_event("Default Globals Loaded...")
-    end defineGlobals
-    
-    --CHECK FOR CACHE FOLDERS
-    on checkCacheFolders_(sender)
-        global RoundHouseHelper_folder
-        
-        log_event("Checking for Cache Folders...")
-        set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive", "Droplets"}
-        set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
-    
+
+    --Search for an image in the chache folder
+    on searchFor()
+        log_event("Looking for images...")
         try
-            tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
-            log_event("Cache Folder 'RoundHouseHelper' created at... " & CacheFolderLoc as string)
+            tell application "Finder" to set waitingforFirstimage to (every file in Download1_folder)
+            if (item 1 of waitingforFirstimage) exists then
+                set meFinished to true
+                log_event("Looking for images...Found!")
+            end if
         end try
-        --set RoundHouseHelper_folder to ((path to library folder) & "Caches:RoundHouseHelper:" as string) as alias
-        repeat with aFolder in CacheFolderList
-            try
-                tell application "Finder" to make new folder at (RoundHouseHelper_folder as alias) with properties {name:aFolder}
-                log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
-            end try
-        end repeat
-        log_event("Checking for Cache Folders...Finished")
-    end checkCacheFolders_
-    
-    --CHECK FOR DROPLETS
-    on checkDroplets_(sender)
-        global dropletsExist
-        global dropletFolder
-        global drop1Name
-        global drop2Name
-        global drop3Name
-        global initializing
         
-        log_event("Checking for Droplets...")
-        --set defaults
-        set dropletsExist to {droplet1exist:false,droplet2exist:false,droplet3exist:false}
-        --gets contents of droplets folder
-        tell Application "Finder" to set dropFolderCont to every file in (dropletFolder as alias) as string
-        --update droplets exists if droplets are found
-        if dropFolderCont as text contains drop1Name then
-            set droplet1exist of dropletsExist to true
-            if initializing is true then log_event("Found " & drop1Name as string)
-            tell drop1Indicator to setIntValue_(1)
+        if pauseUser = true then
+            performSelector_withObject_afterDelay_("pauseSearch", missing value, 1)
+            set pauseUser to false
+        else if meFinished = true then
+            performSelector_withObject_afterDelay_("Prepare", missing value, 1)
+            set meFinished to false
         else
-            tell drop1Indicator to setIntValue_(3)
+            performSelector_withObject_afterDelay_("SearchFor", missing value, 1)
         end if
-        if dropFolderCont as text contains drop2Name then
-            set droplet2exist of dropletsExist to true
-            if initializing is true then log_event("Found " & drop2Name as string)
-            tell drop2Indicator to setIntValue_(1)
-        else
-            tell drop2Indicator to setIntValue_(3)
-        end if
-        if dropFolderCont as text contains drop3Name then
-            set droplet3exist of dropletsExist to true
-            if initializing is true then log_event("Found " & drop3Name as string)
-            tell drop3Indicator to setIntValue_(1)
-        else
-            tell drop3Indicator to setIntValue_(3)
-        end if
-        log_event("Checking for Droplets...Finished")
-    end checkDroplets_
+    end searchFor
+    
+    on Prepare()
+        log "Preparing..."
+    end Prepare
+    
+    on determineNextImage()
+    end determineNextImage
             
     
     (* ======================================================================
@@ -355,28 +297,137 @@ script AppDelegate
         set cancelReshootNew to true
         closeReshootNew_(me)
     end cancelReshootNewButton_
-    
-    on searchViewButton1_(sender)
-        --If we still haven't started, start searching
+
+    on searchPauseButton_(sender)
         if title of sender as string is "Start" then
-            tell searchDetail1 to setStringValue_("Looking for images...")
-            tell searchButton1 to setTitle_("Pause")
-            tell searchButton1 to setState_(0)
-            tell searchBar1 to startAnimation_(me)
-            log_event("Looking for images...")
-        --If we started then, pause the search
+            --If we still haven't started, start searching
+            startSearch()
         else if title of sender as string = "Pause" and state of sender as string = "1" then
-            tell searchDetail1 to setStringValue_("Paused")
-            tell searchBar1 to stopAnimation_(me)
-            log_event("Looking for images...Paused by user")
-        --If we're paused, resume searching
+            --If we started then, pause the search
+            set pauseUser to true
         else if state of sender as string = "0" then
-            tell searchDetail1 to setStringValue_("Looking for images...")
-            tell searchBar1 to startAnimation_(me)
-            log_event("Looking for images...Resumed by user")
+            --If we're paused, resume searching
+            resumeSearch()
         end if
-            
-    end searchViewButton1_
+    end searchPauseButton
+    
+    on pauseSearch()
+        tell searchDetail1 to setStringValue_("Paused")
+        tell searchBar1 to stopAnimation_(me)
+        log_event("Paused by User...")
+    end pauseSearch
+    
+    on resumeSearch()
+        tell searchDetail1 to setStringValue_("Looking for images...")
+        tell searchBar1 to startAnimation_(me)
+        log_event("Resumed by User...")
+        searchFor()
+    end resumeSearch
+    
+    on startSearch()
+        tell searchDetail1 to setStringValue_("Looking for images...")
+        tell searchButton1 to setTitle_("Pause")
+        tell searchButton1 to setState_(0)
+        tell searchBar1 to startAnimation_(me)
+        log_event("Search Start...")
+        searchFor()
+    end startSearch
+
+    
+    (* ======================================================================
+                        Handlers for startup & shutdown!
+     ====================================================================== *)
+    
+    --DEFINE GLOBALS
+    on defineGlobals()
+        global dropletFolder
+        global drop1Name
+        global drop2Name
+        global drop3Name
+        global initializing
+        global clearCacheTimer
+        global ClearCacheCountDown
+        global RoundHouseHelper_folder
+        global curView
+        
+        --Declare MainView as starting view
+        set curView to MainView
+        --initializing turned to false after applicationWillFinishLaunching
+        set initializing to true
+        --Droplet data
+        set dropletFolder to (path to library folder) & "Caches:RoundHouseHelper:Droplets:" as string
+        set drop1Name to "Download1_Droplet"
+        set drop2Name to "Download2_Droplet"
+        set drop3Name to "Download3_Droplet"
+        --ClearCache
+        set clearCacheTimer to 1
+        set ClearCacheCountDown to true
+        --Roundhousehelper cache folder
+        set RoundHouseHelper_folder to (path to library folder) & "Caches:RoundHouseHelper:" as string
+        
+        log_event("Default Globals Loaded...")
+    end defineGlobals
+    
+    --CHECK FOR CACHE FOLDERS
+    on checkCacheFolders_(sender)
+        global RoundHouseHelper_folder
+        
+        log_event("Checking for Cache Folders...")
+        set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive", "Droplets"}
+        set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
+        
+        try
+            tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
+            log_event("Cache Folder 'RoundHouseHelper' created at... " & CacheFolderLoc as string)
+        end try
+        --set RoundHouseHelper_folder to ((path to library folder) & "Caches:RoundHouseHelper:" as string) as alias
+        repeat with aFolder in CacheFolderList
+            try
+                tell application "Finder" to make new folder at (RoundHouseHelper_folder as alias) with properties {name:aFolder}
+                log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
+            end try
+        end repeat
+        log_event("Checking for Cache Folders...Finished")
+    end checkCacheFolders_
+    
+    --CHECK FOR DROPLETS
+    on checkDroplets_(sender)
+        global dropletsExist
+        global dropletFolder
+        global drop1Name
+        global drop2Name
+        global drop3Name
+        global initializing
+        
+        log_event("Checking for Droplets...")
+        --set defaults
+        set dropletsExist to {droplet1exist:false,droplet2exist:false,droplet3exist:false}
+        --gets contents of droplets folder
+        tell Application "Finder" to set dropFolderCont to every file in (dropletFolder as alias) as string
+        --update droplets exists if droplets are found
+        if dropFolderCont as text contains drop1Name then
+            set droplet1exist of dropletsExist to true
+            if initializing is true then log_event("Found " & drop1Name as string)
+            tell drop1Indicator to setIntValue_(1)
+            else
+            tell drop1Indicator to setIntValue_(3)
+        end if
+        if dropFolderCont as text contains drop2Name then
+            set droplet2exist of dropletsExist to true
+            if initializing is true then log_event("Found " & drop2Name as string)
+            tell drop2Indicator to setIntValue_(1)
+            else
+            tell drop2Indicator to setIntValue_(3)
+        end if
+        if dropFolderCont as text contains drop3Name then
+            set droplet3exist of dropletsExist to true
+            if initializing is true then log_event("Found " & drop3Name as string)
+            tell drop3Indicator to setIntValue_(1)
+            else
+            tell drop3Indicator to setIntValue_(3)
+        end if
+        log_event("Checking for Droplets...Finished")
+    end checkDroplets_
     
     (* ======================================================================
                             Handlers for Preferences!
@@ -518,40 +569,5 @@ script AppDelegate
         do shell script "echo " & theLine & " >> ~/Library/Logs/RoundHouseHelper.log"
     end log_event
     
-    (* ======================================================================
-                                    Testing!
-     ====================================================================== *)
-    
-    --testing
-    property thestate : 1
-    
-    --testing
-    on thestate_(sender)
-        if thestate = 0 then
-            set thestate to 1
-        else
-            set thestate to 0
-        end if
-    end thestate
-    
-    --testing
-    on loopthing()
-        log "still running!"
-        if thestate = 1 then
-            performSelector_withObject_afterDelay_("loopthing", missing value, 1)
-        else
-            performSelector_withObject_afterDelay_("pausething", missing value, 1)
-        end if
-    end loopthing
-    
-    --testing
-    on pausething()
-        log "I'm waiting!"
-        if thestate = 1 then
-            performSelector_withObject_afterDelay_("loopthing", missing value, 1)
-        else
-            performSelector_withObject_afterDelay_("pausething", missing value, 1)
-        end if
-    end pausething
     
 end script

@@ -1528,14 +1528,6 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
-						<string key="label">thestate:</string>
-						<reference key="source" ref="976324537"/>
-						<reference key="destination" ref="187523493"/>
-					</object>
-					<int key="connectionID">922</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
 						<string key="label">changeView:</string>
 						<reference key="source" ref="976324537"/>
 						<reference key="destination" ref="114379785"/>
@@ -1688,11 +1680,11 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
-						<string key="label">searchViewButton1:</string>
+						<string key="label">searchPauseButton:</string>
 						<reference key="source" ref="976324537"/>
 						<reference key="destination" ref="988129561"/>
 					</object>
-					<int key="connectionID">959</int>
+					<int key="connectionID">960</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -2637,7 +2629,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">959</int>
+			<int key="maxID">960</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2664,8 +2656,7 @@
 						<string key="closeReshootNew:">id</string>
 						<string key="dropletButtons:">id</string>
 						<string key="retrieveDefaults:">id</string>
-						<string key="searchViewButton1:">id</string>
-						<string key="thestate:">id</string>
+						<string key="searchPauseButton:">id</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="actionInfosByName">
 						<object class="IBActionInfo" key="CancelClearCache:">
@@ -2744,12 +2735,8 @@
 							<string key="name">retrieveDefaults:</string>
 							<string key="candidateClassName">id</string>
 						</object>
-						<object class="IBActionInfo" key="searchViewButton1:">
-							<string key="name">searchViewButton1:</string>
-							<string key="candidateClassName">id</string>
-						</object>
-						<object class="IBActionInfo" key="thestate:">
-							<string key="name">thestate:</string>
+						<object class="IBActionInfo" key="searchPauseButton:">
+							<string key="name">searchPauseButton:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 					</dictionary>
