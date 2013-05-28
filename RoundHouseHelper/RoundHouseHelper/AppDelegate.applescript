@@ -19,6 +19,7 @@ script AppDelegate
     property CacheWindow : missing value
     property PreferencesWindow : missing value
     property ReshootWindow : missing value
+    property doubleCheckWindow : missing value
     --Main Processing Window
     property MainBar1 : missing value
     property MainBar2 : missing value
@@ -42,6 +43,7 @@ script AppDelegate
     property cachelabel : missing value
     property cancelCache : false
     property pauseCache : false
+    property cacheWait : 1
     --Reshoot Window
     property cancelReshootNew : false
     --Master State
@@ -69,7 +71,10 @@ script AppDelegate
     property curBasename : null
     property curDroplet : null
     property processImageName : null
-    property Delay1 : 0.1
+    property Delay1 : 0.3
+    --DoubleCheckWindow
+    property doubleCheckLabel : missing value
+    property doubleCheckHandler : null
     
     
     (* ======================================================================
@@ -93,14 +98,15 @@ script AppDelegate
                 set ClearCacheCountDown to false
                 set clearCacheTimer to 1
             end if
-            performSelector_withObject_afterDelay_("clearCache", missing value, 1)
+            performSelector_withObject_afterDelay_("clearCache", missing value, cacheWait)
         else if ClearCacheCountDown = false and cancelCache = false and pauseCache = false then
             --After the coutdown we can now clear the cache
             set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive"}
             tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
             log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
             --delete all files in folder
-            do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
+            --CLEAR CACHE DISABLED
+            --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
             set clearCacheTimer to clearCacheTimer + 1
             if clearCacheTimer = 7 then
                 set clearCacheTimer to 1
@@ -113,7 +119,7 @@ script AppDelegate
                 set CacheCleared to true
                 log_event("Clear Cache...Finished")
             else
-                performSelector_withObject_afterDelay_("clearCache", missing value, 0.15)
+                performSelector_withObject_afterDelay_("clearCache", missing value, 0.1)
             end if
         else if pauseCache = true and cancelCache = false then
             --Pause clear cache
@@ -139,7 +145,7 @@ script AppDelegate
             resetForStart()
         end if
         
-        if CacheCleared is true then performSelector_withObject_afterDelay_("startSearch", missing value, 1)
+        if CacheCleared is true then performSelector_withObject_afterDelay_("startSearch", missing value, 0.5)
     end ClearCache_
 
     --WAIT FOR THE FIRST IMAGE IN CACHE
@@ -154,13 +160,13 @@ script AppDelegate
         end try
         
         if pauseUser = true then
-            performSelector_withObject_afterDelay_("pauseSearch", missing value, 1)
+            performSelector_withObject_afterDelay_("pauseSearch", missing value, 0.1)
             set pauseUser to false
         else if meFinished = true then
             performSelector_withObject_afterDelay_("Prepare", missing value, 1)
             set meFinished to false
         else
-            performSelector_withObject_afterDelay_("SearchFor", missing value, 1)
+            performSelector_withObject_afterDelay_("SearchFor", missing value, 0.5)
         end if
     end searchFor
     
@@ -169,9 +175,13 @@ script AppDelegate
         set lastTask to "Prepare"
         log_event("Preparing...")
         changeView_(me)
-        tell ArchiveButton to setEnabled_(0)
+        enableArchive(false)
         tell MainBar1 to startAnimation_(me)
+        tell MainBar1 to setMaxValue_(4)
+        tell MainBar1 to setIndeterminate_(false)
         tell MainBar2 to startAnimation_(me)
+        tell MainBar2 to setMaxValue_(35)
+        tell MainBar2 to setIndeterminate_(false)
         tell MainDetail1 to setStringValue_("Preparing to Process Images...")
         tell MainDetail2 to setStringValue_("Total Progress...")
         set processNumber to 1
@@ -181,6 +191,13 @@ script AppDelegate
     
     --DETERMINE THE NEXT IMAGE TO PROCESS
     on determineNextImage()
+        
+        if reshootsel = "A" and processNumber = 1 then
+            --Clear out the old images
+        else if reshootsel = "B" and processNumber = 18 then
+            --Clear out the old images
+        end if
+        
         log_event("Determining next image...")
         set lastTask to "determineNextImage"
         
@@ -209,6 +226,18 @@ script AppDelegate
             set curDroplet to Droplet3Location
         end if
         
+        if processNumber = 35 then
+            enableArchive(true)
+        end if
+        
+        if reshootsel = "A" and processNumber = 18 then
+            set meFinished to true
+            set reshootSel to null
+        else if reshootsel = "B" and processNumber = 35 then
+            set meFinished to false
+            set reshootSel to null
+        end if
+        
         if imageNumber < 10 then set imageNumber to "0" & imageNumber as string
         
         set processImageName to "_" & curBasename & "_" & imageNumber & ".NEF" as string
@@ -222,6 +251,9 @@ script AppDelegate
         else if reqReshoot = true then
             performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
             set reqReshoot to false
+        else if meFinished = true then
+            --End Processing
+            set meFinished to false
         else
             performSelector_withObject_afterDelay_("findNextImage", missing value, Delay1)
         end if
@@ -296,14 +328,14 @@ script AppDelegate
         set lastTask to "waitForDroplet"
         log "Waiting for droplet..."
         
-        try
+        --try
             tell app "Finder" to set processedContents to (every file in processedFolder) as text
             set strippedName to (text 1 thru ((offset of the "." in processImageName) - 1) in processImageName)
             if processedContents contains strippedName then
                 set meFinished to true
                 log_event("Waiting for Droplet...Done!")
             end if
-        end try
+        --end try
         
         if pauseUser = true then
             performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
@@ -334,6 +366,29 @@ script AppDelegate
             
         end if
     end ReshootNewProcess
+    
+    on enableArchive(state)
+        if state = true then
+            tell ArchiveButton to setEnabled_(1)
+        else
+            tell ArchiveButton to setEnabled_(0)
+        end if
+    end enableArchive
+    
+    on ReshootA()
+        set reqReshoot to true
+        set reshootSel to "A"
+    end ReshootA
+    
+    on ReshootB()
+        set reqReshoot to true
+        set reshootSel to "B"
+    end ReshootB
+    
+    on ReshootNew()
+        set reqReshoot to true
+        set reshootSel to "N"
+    end ReshootNew
     
     
     (* ======================================================================
@@ -474,20 +529,17 @@ script AppDelegate
     
     on ReshootAButton_(sender)
         closeReshootNew_(me)
-        set reqReshoot to true
-        set reshootSel to "A"
+        areYouSure("Are you sure you want to Reshoot A?","ReshootA")
     end ReshootAButton_
         
     on ReshootBButton_(sender)
         closeReshootNew_(me)
-        set reqReshoot to true
-        set reshootSel to "B"
+        areYouSure("Are you sure you want to Reshoot B?","ReshootB")
     end ReshootBButton_
         
     on NewButton_(sender)
         closeReshootNew_(me)
-        set reqReshoot to true
-        set reshootSel to "N"
+        areYouSure("Are you sure you want to start over?","ReshootNew")
     end NewButton_
     
     on cancelReshootNewButton_(sender)
@@ -542,6 +594,30 @@ script AppDelegate
     on nextStep_(sender)
         set meFinished to true
     end nextStep_
+    
+    on quickCache_(sender)
+        set cacheWait to 0.01
+    end quickCache_
+    
+    on areYouSure(message,nextHandler)
+        tell doubleCheckLabel to setStringValue_(message)
+        set doubleCheckHandler to nextHandler
+        tell doubleCheckWindow to showOver_(MainWindow)
+        log_event("Are you sure..." & nextHandler)
+    end areYouSure
+    
+    on doubleCheckYes_(sender)
+        tell current application's NSApp to endSheet_(doubleCheckWindow)
+        performSelector_withObject_afterDelay_(doubleCheckHandler, missing value, 1)
+        log_event("Are you sure...Yes")
+        set doubleCheckHandler to null
+    end doubleCheckYes_
+    
+    on doubleCheckNo_(sender)
+        tell current application's NSApp to endSheet_(doubleCheckWindow)
+        log_event("Are you sure...No")
+        set doubleCheckHandler to null
+    end doubleCheckNo_
 
     
     (* ======================================================================
