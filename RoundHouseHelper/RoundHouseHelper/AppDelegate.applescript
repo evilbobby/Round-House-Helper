@@ -356,6 +356,7 @@ script AppDelegate
         if reshootSel = "A" then
             log_event("Reshoot 'A' Selected...")
             set processNumber to 1
+            reshootClearCache()
             
         else if reshootSel = "B" then
             log_event("Reshoot 'B' Selected...")
@@ -375,20 +376,40 @@ script AppDelegate
         end if
     end enableArchive
     
-    on ReshootA()
-        set reqReshoot to true
+    on reshootA()
         set reshootSel to "A"
-    end ReshootA
-    
-    on ReshootB()
         set reqReshoot to true
+    end reshootA
+    
+    on reshootB()
         set reshootSel to "B"
-    end ReshootB
-    
-    on ReshootNew()
         set reqReshoot to true
+    end reshootB
+    
+    on reshootNew()
         set reshootSel to "N"
-    end ReshootNew
+        set reqReshoot to true
+    end reshootNew
+    
+    on reshootClearCache()
+        global RoundHouseHelper_folder
+        
+        if reshootSel = "A" then
+            --Delete the download1 file for A
+            log "1"
+            tell app "Finder" to set theImage to (every file in RoundHouseHelper_folder whose name contains "_TopDown_01.NEF")
+            log theImage
+            log "2"
+            tell app "Finder" set theImage to item 1 of theImage
+            log theImage
+            log "3"
+            do shell script "rm -rf " & POSIX path of theImage
+            --Delete everything in download2
+            --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & "Download2:*" as string)
+        else if reshootSel = "B" then
+            
+        end if
+    end reshootClearCache
     
     
     (* ======================================================================
@@ -529,17 +550,17 @@ script AppDelegate
     
     on ReshootAButton_(sender)
         closeReshootNew_(me)
-        areYouSure("Are you sure you want to Reshoot A?","ReshootA")
+        areYouSure("Are you sure you want to Reshoot A?","reshootA")
     end ReshootAButton_
         
     on ReshootBButton_(sender)
         closeReshootNew_(me)
-        areYouSure("Are you sure you want to Reshoot B?","ReshootB")
+        areYouSure("Are you sure you want to Reshoot B?","reshootB")
     end ReshootBButton_
         
     on NewButton_(sender)
         closeReshootNew_(me)
-        areYouSure("Are you sure you want to start over?","ReshootNew")
+        areYouSure("Are you sure you want to start over?","reshootNew")
     end NewButton_
     
     on cancelReshootNewButton_(sender)
