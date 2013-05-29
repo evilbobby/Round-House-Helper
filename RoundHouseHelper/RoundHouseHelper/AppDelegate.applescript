@@ -20,12 +20,14 @@ script AppDelegate
     property PreferencesWindow : missing value
     property ReshootWindow : missing value
     property doubleCheckWindow : missing value
+    property tempWindow : missing value
     --Main Processing Window
     property MainBar1 : missing value
     property MainBar2 : missing value
     property MainDetail1 : missing value
     property MainDetail2 : missing value
     property ArchiveButton : missing value
+    property mainPauseButton : missing value
     --Searching/Begin Window
     property searchBar1 : missing value
     property searchDetail1 : missing value
@@ -46,6 +48,8 @@ script AppDelegate
     property cacheWait : 1
     --Reshoot Window
     property cancelReshootNew : false
+    property aReshootNew : missing value
+    property bReshootNew : missing value
     --Master State
     property pauseUser : false
     property reqReshoot : false
@@ -53,6 +57,7 @@ script AppDelegate
     property meFinished : false
     property reshootSel : null
     property CacheCleared : false
+    property isPaused : false
     --Download Folders
     property Download1_folder : null
 	property Download2_folder : null
@@ -66,6 +71,7 @@ script AppDelegate
     --Image Processing
     property imageNumber : null
     property processNumber : null
+    property curNumber : null
     property processImage : null
     property curDownloadFolder : null
     property curBasename : null
@@ -75,6 +81,9 @@ script AppDelegate
     --DoubleCheckWindow
     property doubleCheckLabel : missing value
     property doubleCheckHandler : null
+    --Temp Progress Window
+    property tempBar1 : missing value
+    property tempDetail1 : missing value
     
     
     (* ======================================================================
@@ -108,7 +117,7 @@ script AppDelegate
             tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
             log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
             --delete all files in folder
-            do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
+            --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
             set clearCacheTimer to clearCacheTimer + 1
             if clearCacheTimer = 7 then
                 set clearCacheTimer to 1
@@ -178,34 +187,35 @@ script AppDelegate
     
     --PREPARE FOR PROCESSING
     on Prepare()
-        set lastTask to "Prepare"
         log_event("Preparing...")
         changeView_(me)
         enableArchive(false)
-        tell MainBar1 to startAnimation_(me)
-        tell MainBar1 to setMaxValue_(4)
-        tell MainBar1 to setIndeterminate_(false)
-        tell MainBar2 to startAnimation_(me)
-        tell MainBar2 to setMaxValue_(35)
-        tell MainBar2 to setIndeterminate_(false)
+        tell MainBar1
+            startAnimation_(me)
+            setMaxValue_(4)
+            setDoubleValue_(0)
+            setIndeterminate_(false)
+        end tell
+        tell MainBar2
+            startAnimation_(me)
+            setMaxValue_(35)
+            setDoubleValue_(0)
+            setIndeterminate_(false)
+        end tell
         tell MainDetail1 to setStringValue_("Preparing to Process Images...")
         tell MainDetail2 to setStringValue_("Total Progress...")
         set processNumber to 1
+        set curNumber to processNumber
         
         performSelector_withObject_afterDelay_("determineNextImage", missing value, 1)
     end Prepare
     
     --DETERMINE THE NEXT IMAGE TO PROCESS
     on determineNextImage()
-        
-        if reshootsel = "A" and processNumber = 1 then
-            --Clear out the old images
-        else if reshootsel = "B" and processNumber = 18 then
-            --Clear out the old images
-        end if
-        
         log_event("Determining next image...")
-        set lastTask to "determineNextImage"
+        --If we pause and come back here we will throw off the image count
+        --so when paused we resume at the next step (findNextImage)
+        set lastTask to "findNextImage"
         
         if processNumber ≥ 1 then
             set imageNumber to processNumber
@@ -232,27 +242,41 @@ script AppDelegate
             set curDroplet to Droplet3Location
         end if
         
+        --At the end of processing, Stop and enable the archive button
         if processNumber = 35 then
             enableArchive(true)
+            set meFinished to true
         end if
         
+        --Reshoot Processing Management
         if reshootsel = "A" and processNumber = 18 then
+            --Stop processing once I finish all 17 images
             set meFinished to true
             set reshootSel to null
         else if reshootsel = "B" and processNumber = 35 then
-            set meFinished to false
+            --Stop processing once I finish all 17 images
+            --set meFinished to true happens at end of processing above
             set reshootSel to null
         end if
         
+        --Create next image name
         if imageNumber < 10 then set imageNumber to "0" & imageNumber as string
-        
         set processImageName to "_" & curBasename & "_" & imageNumber & ".NEF" as string
+        
+        --Update the window
+        tell MainBar2 to setDoubleValue_(processNumber)
+        tell MainDetail2 to setStringValue_("Processing " & processNumber & " of 34")
+        
+        --Although we're ready for the next processNumber, we need this number (curNumber) just
+        --in case we don't find the next image yet and we need to know what image we just finished.
+        set curNumber to processNumber
+        --Next processNumber
         set processNumber to processNumber + 1
         
         log_event("Next Image: " & processImageName)
         
         if pauseUser = true then
-            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            performSelector_withObject_afterDelay_("mainPause", missing value, Delay1)
             set pauseUser to false
         else if reqReshoot = true then
             performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
@@ -261,6 +285,7 @@ script AppDelegate
             --End Processing
             set meFinished to false
         else
+            --Always move on to the next step, never restart myself
             performSelector_withObject_afterDelay_("findNextImage", missing value, Delay1)
         end if
     end determineNextImage
@@ -270,10 +295,16 @@ script AppDelegate
         set lastTask to "findNextImage"
         log "Waiting for image..."
         
+        --Update the window
+        tell MainBar1 to setDoubleValue_(1)
+        tell MainDetail1 to setStringValue_("Looking for " & processImageName)
+        
         try
             tell app "Finder" to set processImage to (every file in curDownloadFolder whose name contains processImageName)
             if (item 1 of processImage) exists then
                 set processImage to item 1 of processImage
+                --Update the curNumber because we've moved onto the next image
+                set curNumber to processNumber
                 set meFinished to true
                 log_event("Image has arrived!")
                 log_event("Waiting for image to download...")
@@ -281,7 +312,7 @@ script AppDelegate
         end try
         
         if pauseUser = true then
-            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            performSelector_withObject_afterDelay_("mainPause", missing value, Delay1)
             set pauseUser to false
         else if reqReshoot = true then
             performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
@@ -299,24 +330,27 @@ script AppDelegate
         set lastTask to "waitForDownload"
         log "Waiting for download..."
         
-        --try
+        --Update the window
+        tell MainBar1 to setDoubleValue_(2)
+        tell MainDetail1 to setStringValue_("Waiting for " & processImageName & " to finish downloading...")
+        
+        try
             tell app "Finder" to set oldsize to physical size of processImage
             delay 0.1
             tell app "Finder" to set newsize to physical size of processImage
             if oldsize = newsize then
-                --set lookforme to (name of (item 1 of Images_to_process as alias) as string)
-                --set lookforme to (text 1 thru ((offset of the "." in lookforme) - 1) in lookforme)
                 log_event("Waiting for image to download...Done")
                 log_event("Sending image to Photoshop...")
                 --Send the image to photoshop using the correct droplet
-                tell app "Finder" to open processImage using curDroplet
+                --tell app "Finder" to open processImage using curDroplet
                 set meFinished to true
-                log_event("Waiting for Droplet...")
+                log_event("Waiting for droplet...")
             end if
-        --end try
+        end try
         
-        if pauseUser = true then
-            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+        if pauseUser = true and meFinished = false then
+            --"and meFinished = false" = If I finished, I don't want to resend the image to photoshop so we can't pause until the next step
+            performSelector_withObject_afterDelay_("mainPause", missing value, Delay1)
             set pauseUser to false
         else if reqReshoot = true then
             performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
@@ -334,17 +368,23 @@ script AppDelegate
         set lastTask to "waitForDroplet"
         log "Waiting for droplet..."
         
-        --try
+        --Update the window
+        tell MainBar1 to setDoubleValue_(3)
+        tell MainDetail1 to setStringValue_("Processing " & processImageName)
+        
+        try
             tell app "Finder" to set processedContents to (every file in processedFolder) as text
             set strippedName to (text 1 thru ((offset of the "." in processImageName) - 1) in processImageName)
             if processedContents contains strippedName then
                 set meFinished to true
+                tell MainBar1 to setDoubleValue_(4)
+                tell MainDetail1 to setStringValue_("Finished Processing " & processImageName)
                 log_event("Waiting for Droplet...Done!")
             end if
-        --end try
+        end try
         
         if pauseUser = true then
-            performSelector_withObject_afterDelay_("pauseSearch", missing value, Delay1)
+            performSelector_withObject_afterDelay_("mainPause", missing value, Delay1)
             set pauseUser to false
         else if reqReshoot = true then
             performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
@@ -364,20 +404,19 @@ script AppDelegate
             set processNumber to 1
             reshootClearCache()
             performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
-            
         else if reshootSel = "B" then
             log_event("Reshoot 'B' Selected...")
             set processNumber to 18
             reshootClearCache()
             performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
-            
         else if reshootSel = "N" then
             log_event("Reshoot 'New' Selected...")
-            delay 2
+            delay 0.5
             performSelector_withObject_afterDelay_("StartClearCache", missing value, Delay1)
         end if
     end ReshootNewProcess
     
+    --ENABLE OR DISABLE THE ARCHIVE BUTTON (TRUE/FALSE)
     on enableArchive(state)
         if state = true then
             tell ArchiveButton to setEnabled_(1)
@@ -386,25 +425,33 @@ script AppDelegate
         end if
     end enableArchive
     
+    --IF RESHOOT "A" IS SELECTED
     on reshootA()
         set reshootSel to "A"
         set reqReshoot to true
+        if isPaused is true then quietUserRequest()
     end reshootA
     
+    --IF RESHOOT "B" IS SELECTED
     on reshootB()
         set reshootSel to "B"
         set reqReshoot to true
+        if isPaused is true then quietUserRequest()
     end reshootB
     
+    --IF RESHOOT "NEW" IS SELECTED
     on reshootNew()
         set reshootSel to "N"
         set reqReshoot to true
+        if isPaused is true then quietUserRequest()
     end reshootNew
     
+    --CLEAR THE CACHE DURING A "RESHOOT/NEW" FUNCTION
     on reshootClearCache()
         global RoundHouseHelper_folder
         
         log_event("Reshoot Clear Cache...Reshoot" & reshootSel)
+        showTempProgress("Preparing to Reshoot "& reshootSel & "...",4,1)
         
         if reshootSel = "A" then
             try
@@ -412,8 +459,23 @@ script AppDelegate
                 tell app "Finder" to set theImage to (every file in ((RoundHouseHelper_folder & "Download1:" as string) as alias) whose name contains "_TopDown_01.NEF")
                 tell app "Finder" to set theImage to item 1 of theImage as alias
                 do shell script "rm -rf " & POSIX path of theImage
+                tell tempBar1 to incrementBy_(1)
+                tell tempDetail1 to setStringValue_("Removing old data from Download1...")
                 --Delete everything in download2
                 do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & "Download2:*" as string)
+                tell tempBar1 to incrementBy_(1)
+                tell tempDetail1 to setStringValue_("Removing old data from Download2...")
+                --Find all of the images in the processed folder
+                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_Hero_")
+                tell tempDetail1 to setStringValue_("Removing old data from processed...")
+                repeat with i in processedImages
+                    do shell script "rm -rf " & POSIX path of (i as alias)
+                end repeat
+                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_TopDown_01")
+                do shell script "rm -rf " & POSIX path of (item 1 of processedImages as alias)
+                --Done!
+                tell tempBar1 to incrementBy_(1)
+                tell tempDetail1 to setStringValue_("Ready to Reshoot A!")
                 log_event("Reshoot Clear Cache...Done!")
             on error errmsg
                 log_event("Reshoot Clear Cache...FAILED")
@@ -425,15 +487,63 @@ script AppDelegate
                 tell app "Finder" to set theImage to (every file in ((RoundHouseHelper_folder & "Download1:" as string) as alias) whose name contains "_TopDown_02.NEF")
                 tell app "Finder" to set theImage to item 1 of theImage as alias
                 do shell script "rm -rf " & POSIX path of theImage
+                tell tempBar1 to incrementBy_(1)
+                tell tempDetail1 to setStringValue_("Removing old data from Download1...")
                 --Delete everything in download3
                 do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & "Download3:*" as string)
+                tell tempBar1 to incrementBy_(1)
+                tell tempDetail1 to setStringValue_("Removing old data from Download3...")
+                --Find all of the images in the processed folder
+                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_Open_")
+                tell tempDetail1 to setStringValue_("Removing old data from processed...")
+                repeat with i in processedImages
+                    do shell script "rm -rf " & POSIX path of (i as alias)
+                end repeat
+                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_TopDown_02")
+                do shell script "rm -rf " & POSIX path of (item 1 of processedImages as alias)
+                --Done!
+                tell tempBar1 to incrementBy_(1)
+                tell tempDetail1 to setStringValue_("Ready to Reshoot B!")
                 log_event("Reshoot Clear Cache...Done!")
             on error errmsg
                 log_event("Reshoot Clear Cache...FAILED")
                 display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper."
             end try
         end if
+        
+        --Hide the progress window
+        delay 0.75
+        hideTempProgress()
+        
     end reshootClearCache
+    
+    --PAUSE THE MAIN PROCESSING
+    on mainPause()
+        tell MainBar1 to stopAnimation_(me)
+        tell MainBar2 to stopAnimation_(me)
+        set isPaused to true
+        log_event("Main Processing Paused!")
+    end mainPause
+    
+    --RESUME THE MAIN PROCESSING
+    on mainResume()
+        tell mainPauseButton to setState_(0)
+        tell MainBar1 to startAnimation_(me)
+        tell MainBar2 to startAnimation_(me)
+        set isPaused to false
+        log_event("Main Processing Resumed!")
+        performSelector_withObject_afterDelay_(lastTask, missing value, delay1)
+    end mainResume
+    
+    --Enable user requests even when processing is paused or finished.
+    on quietUserRequest()
+        if reqReshoot = true then
+            performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
+            set reqReshoot to false
+        end if
+        if isPaused is true then tell mainPauseButton to setState_(0)
+        log_event("Quiet user Resume...")
+    end quietUserRequest
     
     
     (* ======================================================================
@@ -558,14 +668,24 @@ script AppDelegate
     
     on ReshootNew_(sender)
         --Open reshoot/New Window
-        log_event("Reshoot-New window launched")
+        log_event("Reshoot-New window opened")
+        
+        --Enable "Reshoot" buttons during breaks.
+        if curNumber = 18 then
+            tell aReshootNew to setEnabled_(1)
+        else if curNumber = 35 then
+            tell aReshootNew to setEnabled_(1)
+            tell bReshootNew to setEnabled_(1)
+        end if
+        
         tell ReshootWindow to showOver_(MainWindow)
-        --ReshootWindow's makeKeyAndOrderFront_(me)
     end ReshootNew_
     
     on closeReshootNew_(sender)
         --Use MyriadHelpers to close cache sheet
         tell current application's NSApp to endSheet_(ReshootWindow)
+        tell aReshootNew to setEnabled_(0)
+        tell bReshootNew to setEnabled_(0)
         if cancelReshootNew = true then
             log_event("Reshoot-New window closed")
             set cancelReshootNew to false
@@ -663,6 +783,27 @@ script AppDelegate
         log_event("Are you sure...No")
         set doubleCheckHandler to null
     end doubleCheckNo_
+    
+    on mainPauseProcessing_(sender)
+        if state of sender as string = "1" then
+            --Pause everything (request)
+            set pauseUser to true
+        else if state of sender as string = "0" then
+            --Resume Processing
+            mainResume()
+        end if
+    end mainPauseProcessing_
+    
+    on showTempProgress(tempDetail,tempMaxValue,tempValue)
+        tell tempDetail1 to setStringValue_(tempDetail)
+        tell tempBar1 to setMaxValue_(tempMaxValue)
+        tell tempBar1 to setDoubleValue_(tempValue)
+        tell tempWindow to showOver_(MainWindow)
+    end showTempProgress
+    
+    on hideTempProgress()
+        tell current application's NSApp to endSheet_(tempWindow)
+    end hideTempProgress
 
     
     (* ======================================================================
