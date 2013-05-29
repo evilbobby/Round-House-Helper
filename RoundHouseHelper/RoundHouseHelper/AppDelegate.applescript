@@ -87,6 +87,9 @@ script AppDelegate
         global ClearCacheCountDown
         global RoundHouseHelper_folder
         
+        --Reset for start if this is my first round
+        if clearCacheTimer = 1 then resetForStart()
+        
         --Make sure the cancel button was not pressed
         if ClearCacheCountDown = true and cancelCache = false and pauseCache = false then
             --Do 5 second countdown
@@ -105,8 +108,7 @@ script AppDelegate
             tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
             log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
             --delete all files in folder
-            --CLEAR CACHE DISABLED
-            --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
+            do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
             set clearCacheTimer to clearCacheTimer + 1
             if clearCacheTimer = 7 then
                 set clearCacheTimer to 1
@@ -145,7 +147,11 @@ script AppDelegate
             resetForStart()
         end if
         
-        if CacheCleared is true then performSelector_withObject_afterDelay_("startSearch", missing value, 0.5)
+        --When the cache is cleared, begin searching.
+        if CacheCleared is true then
+            performSelector_withObject_afterDelay_("startSearch", missing value, 0.5)
+            set CacheCleared to false
+        end if
     end ClearCache_
 
     --WAIT FOR THE FIRST IMAGE IN CACHE
@@ -357,14 +363,18 @@ script AppDelegate
             log_event("Reshoot 'A' Selected...")
             set processNumber to 1
             reshootClearCache()
+            performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
             
         else if reshootSel = "B" then
             log_event("Reshoot 'B' Selected...")
             set processNumber to 18
+            reshootClearCache()
+            performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
             
         else if reshootSel = "N" then
             log_event("Reshoot 'New' Selected...")
-            
+            delay 2
+            performSelector_withObject_afterDelay_("StartClearCache", missing value, Delay1)
         end if
     end ReshootNewProcess
     
@@ -394,20 +404,34 @@ script AppDelegate
     on reshootClearCache()
         global RoundHouseHelper_folder
         
+        log_event("Reshoot Clear Cache...Reshoot" & reshootSel)
+        
         if reshootSel = "A" then
-            --Delete the download1 file for A
-            log "1"
-            tell app "Finder" to set theImage to (every file in RoundHouseHelper_folder whose name contains "_TopDown_01.NEF")
-            log theImage
-            log "2"
-            tell app "Finder" set theImage to item 1 of theImage
-            log theImage
-            log "3"
-            do shell script "rm -rf " & POSIX path of theImage
-            --Delete everything in download2
-            --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & "Download2:*" as string)
+            try
+                --Delete the download1 file for A
+                tell app "Finder" to set theImage to (every file in ((RoundHouseHelper_folder & "Download1:" as string) as alias) whose name contains "_TopDown_01.NEF")
+                tell app "Finder" to set theImage to item 1 of theImage as alias
+                do shell script "rm -rf " & POSIX path of theImage
+                --Delete everything in download2
+                do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & "Download2:*" as string)
+                log_event("Reshoot Clear Cache...Done!")
+            on error errmsg
+                log_event("Reshoot Clear Cache...FAILED")
+                display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper."
+            end try
         else if reshootSel = "B" then
-            
+            try
+                --Delete the download1 file for B
+                tell app "Finder" to set theImage to (every file in ((RoundHouseHelper_folder & "Download1:" as string) as alias) whose name contains "_TopDown_02.NEF")
+                tell app "Finder" to set theImage to item 1 of theImage as alias
+                do shell script "rm -rf " & POSIX path of theImage
+                --Delete everything in download3
+                do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & "Download3:*" as string)
+                log_event("Reshoot Clear Cache...Done!")
+            on error errmsg
+                log_event("Reshoot Clear Cache...FAILED")
+                display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper."
+            end try
         end if
     end reshootClearCache
     
