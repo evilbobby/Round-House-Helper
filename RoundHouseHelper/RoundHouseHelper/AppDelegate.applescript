@@ -21,6 +21,7 @@ script AppDelegate
     property ReshootWindow : missing value
     property doubleCheckWindow : missing value
     property tempWindow : missing value
+    property existsWindow : missing value
     --Main Processing Window
     property MainBar1 : missing value
     property MainBar2 : missing value
@@ -38,6 +39,7 @@ script AppDelegate
     property drop1Indicator : missing value
     property drop2Indicator : missing value
     property drop3Indicator : missing value
+    property LogWindow : missing value
     --Cache Window
     property cacheIndicator : missing value
     property cachecancelbutton : missing value
@@ -64,6 +66,7 @@ script AppDelegate
 	property Download3_folder : null
     property Download4_folder : null
     property processedFolder : null
+    property prearchiveFolder : null
     --Droplets
     property Droplet1Location : null
     property Droplet2Location : null
@@ -78,12 +81,20 @@ script AppDelegate
     property curDroplet : null
     property processImageName : null
     property Delay1 : 0.3
+    --Image Archiving
+    property carNumber : null
+    property overwrite : false
+    property files_exist : false
+    property saved : true
     --DoubleCheckWindow
     property doubleCheckLabel : missing value
     property doubleCheckHandler : null
     --Temp Progress Window
     property tempBar1 : missing value
     property tempDetail1 : missing value
+    --Already exists window
+    property existsSelection : "Overwrite"
+    property existsNumber : missing value
     
     
     (* ======================================================================
@@ -152,8 +163,6 @@ script AppDelegate
                 set pauseCache to false
             end try
             log_event("Clear Cache...CANCELED BY USER")
-            --if window is at Main then change to search window and reset for "start" button
-            resetForStart()
         end if
         
         --When the cache is cleared, begin searching.
@@ -165,7 +174,7 @@ script AppDelegate
 
     --WAIT FOR THE FIRST IMAGE IN CACHE
     on searchFor()
-        log_event("Looking for images...")
+        log "Looking for images..."
         try
             tell application "Finder" to set waitingforFirstimage to (every file in Download1_folder)
             if (item 1 of waitingforFirstimage) exists then
@@ -265,15 +274,23 @@ script AppDelegate
         
         --Update the window
         tell MainBar2 to setDoubleValue_(processNumber)
-        tell MainDetail2 to setStringValue_("Processing " & processNumber & " of 34")
+        if processNumber < 35 then
+            tell MainDetail2 to setStringValue_("Processing " & processNumber & " of 34")
+        else
+            tell MainDetail2 to setStringValue_("Finished!")
+        end if
+        
+        if processNumber = "17" then
+            log_event("Image Processing done!")
+        else
+            log_event("Next Image: " & processImageName)
+        end if
         
         --Although we're ready for the next processNumber, we need this number (curNumber) just
         --in case we don't find the next image yet and we need to know what image we just finished.
         set curNumber to processNumber
         --Next processNumber
         set processNumber to processNumber + 1
-        
-        log_event("Next Image: " & processImageName)
         
         if pauseUser = true then
             performSelector_withObject_afterDelay_("mainPause", missing value, Delay1)
@@ -403,12 +420,12 @@ script AppDelegate
             log_event("Reshoot 'A' Selected...")
             set processNumber to 1
             reshootClearCache()
-            performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
+            performSelector_withObject_afterDelay_("determineNextImage", missing value, 1)
         else if reshootSel = "B" then
             log_event("Reshoot 'B' Selected...")
             set processNumber to 18
             reshootClearCache()
-            performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
+            performSelector_withObject_afterDelay_("determineNextImage", missing value, 1)
         else if reshootSel = "N" then
             log_event("Reshoot 'New' Selected...")
             delay 0.5
@@ -456,7 +473,7 @@ script AppDelegate
         if reshootSel = "A" then
             try
                 --Delete the download1 file for A
-                tell app "Finder" to set theImage to (every file in ((RoundHouseHelper_folder & "Download1:" as string) as alias) whose name contains "_TopDown_01.NEF")
+                tell app "Finder" to set theImage to (every file in Download1_folder whose name contains "_TopDown_01.NEF")
                 tell app "Finder" to set theImage to item 1 of theImage as alias
                 do shell script "rm -rf " & POSIX path of theImage
                 tell tempBar1 to incrementBy_(1)
@@ -466,12 +483,12 @@ script AppDelegate
                 tell tempBar1 to incrementBy_(1)
                 tell tempDetail1 to setStringValue_("Removing old data from Download2...")
                 --Find all of the images in the processed folder
-                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_Hero_")
+                tell app "Finder" to set processedImages to (every file in processedFolder whose name contains "_Hero_")
                 tell tempDetail1 to setStringValue_("Removing old data from processed...")
                 repeat with i in processedImages
                     do shell script "rm -rf " & POSIX path of (i as alias)
                 end repeat
-                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_TopDown_01")
+                tell app "Finder" to set processedImages to (every file in processedFolder whose name contains "_TopDown_01")
                 do shell script "rm -rf " & POSIX path of (item 1 of processedImages as alias)
                 --Done!
                 tell tempBar1 to incrementBy_(1)
@@ -484,7 +501,7 @@ script AppDelegate
         else if reshootSel = "B" then
             try
                 --Delete the download1 file for B
-                tell app "Finder" to set theImage to (every file in ((RoundHouseHelper_folder & "Download1:" as string) as alias) whose name contains "_TopDown_02.NEF")
+                tell app "Finder" to set theImage to (every file in Download1_folder whose name contains "_TopDown_02.NEF")
                 tell app "Finder" to set theImage to item 1 of theImage as alias
                 do shell script "rm -rf " & POSIX path of theImage
                 tell tempBar1 to incrementBy_(1)
@@ -494,12 +511,12 @@ script AppDelegate
                 tell tempBar1 to incrementBy_(1)
                 tell tempDetail1 to setStringValue_("Removing old data from Download3...")
                 --Find all of the images in the processed folder
-                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_Open_")
+                tell app "Finder" to set processedImages to (every file in processedFolder whose name contains "_Open_")
                 tell tempDetail1 to setStringValue_("Removing old data from processed...")
                 repeat with i in processedImages
                     do shell script "rm -rf " & POSIX path of (i as alias)
                 end repeat
-                tell app "Finder" to set processedImages to (every file in ((RoundHouseHelper_folder & "processed:" as string) as alias) whose name contains "_TopDown_02")
+                tell app "Finder" to set processedImages to (every file in processedFolder whose name contains "_TopDown_02")
                 do shell script "rm -rf " & POSIX path of (item 1 of processedImages as alias)
                 --Done!
                 tell tempBar1 to incrementBy_(1)
@@ -510,11 +527,9 @@ script AppDelegate
                 display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper."
             end try
         end if
-        
         --Hide the progress window
         delay 0.75
         hideTempProgress()
-        
     end reshootClearCache
     
     --PAUSE THE MAIN PROCESSING
@@ -544,6 +559,205 @@ script AppDelegate
         if isPaused is true then tell mainPauseButton to setState_(0)
         log_event("Quiet user Resume...")
     end quietUserRequest
+    
+    (* ======================================================================
+                                Handlers for Archiving!
+     ====================================================================== *)
+    
+    --START ARCHIVING
+    on startArchive()
+        log_event("Archiving...")
+        log_event("Archiving...Preparing")
+        showTempProgress("Preparing to archive current take...",88,0)
+        performSelector_withObject_afterDelay_("getFilenameCheckExists", missing value, 0.01)
+    end startArchive
+    
+    on cancelArchive()
+        log_event("Archiving...Canceled")
+        doneArchive()
+    end cancelArchive
+    
+    tell tempBar1 to incrementBy_(1)
+    tell tempDetail1 to setStringValue_("Ready to Reshoot A!")
+    
+    --GET THE CARNUMBER AND CHECK IF IT ALREADY EXISTS
+    on getFilenameCheckExists()
+        global saveFolderloc
+        global rawFolderloc
+        
+        --Get the car Number (only if it isn't already set)
+        if carNumber = null then
+            log_event("Archiving...Get Car Number")
+            tempProgressUpdate(1,"Getting car Number...")
+            tell application "Finder" to set fullname to name of ((first item of Download1_folder) as alias)
+            set carNumber to (text 1 thru ((offset of "_" in fullname) - 1) of fullname) as string
+        end if
+        log_event("Archiving...carNumber: " & carNumber)
+        
+        --Check if files already exist
+            log_event("Archiving...Check if Images already exist")
+            tempProgressUpdate(1,"Checking if files already exists in save locations...")
+        try
+            tell application "Finder" to set Completed_folder_contents to (entire contents of ((saveFolderloc & carNumber & ":" as string) as alias) as text)
+            if Completed_folder_contents contains "-edc-" or Completed_folder_contents contains "-edo-" or Completed_folder_contents contains "-top-" then set files_exist to true
+        end try
+        tempProgressUpdate(1,null)
+        try
+            tell application "Finder" to set zip_folder_contents to (entire contents of (rawFolderloc as alias) as text)
+            if zip_folder_contents contains (carNumber & ".zip" as string) then set files_exist to true
+        end try
+        
+        --if files exists ask the user, else continue archiving
+        if files_exist is true then
+            log_event("Archiving...images exist")
+            set files_exist to false
+            hideTempProgress()
+            delay 0.3
+            showFilesExistWindow()
+        else
+            log_event("Archiving...images do not exist")
+            performSelector_withObject_afterDelay_("prepareImagesForArchive", missing value, 0.01)
+        end if
+    end getFilenameCheckExists
+    
+    --PREPARE THE IMAGES IN THE PROCESSED FOLDER
+    on prepareImagesForArchive()
+        log_event("Archiving...Prepare images in cache for archive")
+        
+        tell app "Finder" to set theProcessedImages to every file of processedFolder
+        
+        log_event("Archiving...Duplicate-Rename-Resize started")
+        repeat with api in theProcessedImages
+            log_event("Archiving...Gather information about: " & api as string)
+            tell application "Finder"
+                --Get the name of the file
+                set original_name to name of api as string
+                --get the extention of the file
+                set api_extention to name extension of api as string
+            end tell
+            --Get the basename
+            set original_name_basename to (text 1 thru ((offset of ("." & api_extention as string) in original_name) - 1) of original_name) as string
+            --Get the filenumber (different from carnumber)
+            set api_filenumber to (text ((offset of ("." & api_extention as string) in original_name) - 2) thru ((offset of ("." & api_extention as string) in original_name) - 1) of original_name) as string
+            --Get the camera identifier (aka "Topdown")
+            set api_classification to (text ((offset of "_" in original_name) + 1) thru ((offset of ("_" & api_filenumber as string) in original_name) - 1) of original_name) as string
+            if api_classification = "Hero" then
+                set api_detail to "edc"
+            else if api_classification = "TopDown" then
+                set api_detail to "top"
+            else if api_classification = "Open" then
+                set api_detail to "edo"
+            else
+                --If I can't determine the name then cancel the sheet
+                log_event("Archiving...Can't determine the classification of processed image: " & original_name)
+                cancelArchive()
+                return
+            end if
+            --Update the progress window & short pause so we can see the update
+            tempProgressUpdate(1,"Preparing " & (carNumber & "-" & api_detail & "-" & api_filenumber & ".UPLOADLARGE." & api_extention as string) & "...")
+            delay 0.05
+            log_event("Archiving...duplicate and rename files")
+            --Now that we have all of the information about this image
+            --Lets create a duplicate file with the "small" file name
+            do shell script "cp " & POSIX path of (api as alias) & " " & POSIX path of (processedFolder & carNumber & "-" & api_detail & "-" & api_filenumber & ".UPLOADSMALL." & api_extention as string)
+            --now lets rename the original file to the "large" name
+            do shell script "mv " & POSIX path of (api as alias) & " " & POSIX path of (processedFolder & carNumber & "-" & api_detail & "-" & api_filenumber & ".UPLOADLARGE." & api_extention as string)
+            --Update the progress window & short pause so we can see the update
+            tempProgressUpdate(1,"Resizing " & (carNumber & "-" & api_detail & "-" & api_filenumber & ".UPLOADSMALL." & api_extention as string) & "...")
+            delay 0.05
+            log_event("Archiving...resize 'small' image")
+            --Now lets resize the "small" image using image events
+            tell application "Image Events"
+                launch
+                set api_duplicate to (processedFolder & carNumber & "-" & api_detail & "-" & api_filenumber & ".UPLOADSMALL." & api_extention as string) as alias
+                set this_image to open api_duplicate
+                scale this_image to size 940
+                save this_image with icon
+                close this_image
+            end tell
+        end repeat
+        log_event("Archiving...Duplicate-Rename-Resize finished")
+        
+        performSelector_withObject_afterDelay_("organizeData", missing value, 0.01)
+    end prepareImagesForArchive
+    
+    --MOVE ALL OF THE DATA AROUND AND COPY THE FILES TO THE SAVED FOLDER
+    on organizeData()
+        global RoundHouseHelper_folder
+        global saveFolderloc
+        log_event("Archiving...Organize Data")
+        
+        --move images from each download folder to the prearchive folder
+        do shell script "mv " & POSIX path of (RoundHouseHelper_folder & "Download1:*" as string) & " " & POSIX path of prearchiveFolder
+        log_event("Archiving...move images from Download1 to Prearchive")
+        tempProgressUpdate(1,"Move Download1 images to Prearchive Folder...")
+        do shell script "mv " & POSIX path of (RoundHouseHelper_folder & "Download2:*" as string) & " " & POSIX path of prearchiveFolder
+        log_event("Archiving...move images from Download2 to Prearchive")
+        tempProgressUpdate(1,"Move Download2 images to Prearchive Folder...")
+        do shell script "mv " & POSIX path of (RoundHouseHelper_folder & "Download3:*" as string) & " " & POSIX path of prearchiveFolder
+        log_event("Archiving...move images from Download3 to Prearchive")
+        tempProgressUpdate(1,"Move Download3 images to Prearchive Folder...")
+        
+        --Try to create the folder
+        tempProgressUpdate(1,"Check for/Create new folder in save location...")
+        try
+            tell app "Finder" to make new folder at (saveFolderloc as alias) with properties {name:carNumber as string}
+            log_event("Archiving...Folder created")
+        on error errmsg
+            log_event("Archiving...Folder already exists")
+        end try
+        
+        --Copy the new files over (overwrite automatically)
+        log_event("Archiving...Copy files from Processed folder to savefolder with ID: " & carNumber)
+        tempProgressUpdate(1,"Copying processed images to save folder: " & carNumber)
+        do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
+        
+        log_event("Archiving...Organize Data Finished")
+        performSelector_withObject_afterDelay_("doArchive", missing value, 0.01)
+    end organizeData
+    
+    on doArchive()
+        global rawFolderloc
+        log_event("Archiving...Prepare to zip Prearchive folder")
+        
+        --try to remove old data if it exists
+        tempProgressUpdate(1,"If old data exists, remove it...")
+        try
+            do shell script "rm -rf " & quoted form of POSIX path of (saveFolderloc & carNumber & ".zip" as string)
+            log_event("Archiving...old zip file removed")
+        end try
+        
+        --Set the zip path
+        log_event("Archiving...Create the zip file")
+        tempProgressUpdate(1,"Archiving Raw Images (zip)...Please wait")
+        set zippath to rawFolderloc & carNumber & ".zip" as string
+        delay 0.25
+        try
+            do shell script "zip -r -jr " & quoted form of POSIX path of zippath & " " & quoted form of POSIX path of prearchiveFolder --& " > /dev/null 2>&1 &"
+        on error errmsg
+            log_event("Archiving...FAILED WHILE ATTEMPTING TO CREATE ZIP FILE")
+            set saved to false
+            tell me to display dialog "Failed to create .zip of raw images! Please close and re-open the Helper."
+        end try
+        
+        --Done archiving
+        performSelector_withObject_afterDelay_("doneArchive", missing value, 0.01)
+    end doArchive
+    
+    on doneArchive()
+        set carNumber to null
+        set overwrite to false
+        tempProgressUpdate(10,"Finished Archiving.")
+        log_event("Archiving...Done!")
+        delay 1
+        hideTempProgress()
+        --if the zip saved sucessfully then clear the cache, otherwise let the user try again
+        if saved = true then
+            performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
+        end if
+        --reset saved for next use
+        set saved to true
+    end doneArchive
     
     
     (* ======================================================================
@@ -660,9 +874,9 @@ script AppDelegate
     on OpenPreferences_(sender)
         --open preferences window
         log_event("Open Preferences...")
-        PreferencesWindow's makeKeyAndOrderFront_(me)
         updateSavefolderLocLabel()
         updateRawfolderLocLabel()
+        PreferencesWindow's makeKeyAndOrderFront_(me)
         log_event("Open Preferences...Finished")
     end OpenPreferences_
     
@@ -671,9 +885,7 @@ script AppDelegate
         log_event("Reshoot-New window opened")
         
         --Enable "Reshoot" buttons during breaks.
-        if curNumber = 18 then
-            tell aReshootNew to setEnabled_(1)
-        else if curNumber = 35 then
+        if curNumber = 35 then
             tell aReshootNew to setEnabled_(1)
             tell bReshootNew to setEnabled_(1)
         end if
@@ -753,6 +965,7 @@ script AppDelegate
         tell searchButton1 to setTitle_("Pause")
         tell searchBar1 to startAnimation_(me)
         log_event("Search Start...")
+        log_event("Looking for images...")
         searchFor()
     end startSearch
     
@@ -761,7 +974,13 @@ script AppDelegate
     end nextStep_
     
     on quickCache_(sender)
-        set cacheWait to 0.01
+        if cacheWait is not 0.01 then
+            log "cacheWait = 0.01"
+            set cacheWait to 0.01
+        else
+            log "cacheWait = 1"
+            set cacheWait to 1
+        end if
     end quickCache_
     
     on areYouSure(message,nextHandler)
@@ -795,15 +1014,85 @@ script AppDelegate
     end mainPauseProcessing_
     
     on showTempProgress(tempDetail,tempMaxValue,tempValue)
+        log_event("Show Temp Progress...")
+        log_event("Show Temp Progress...Detail: " & tempDetail)
+        log_event("Show Temp Progress...maxValue: " & tempMaxValue & " curValue: " & tempValue)
         tell tempDetail1 to setStringValue_(tempDetail)
         tell tempBar1 to setMaxValue_(tempMaxValue)
         tell tempBar1 to setDoubleValue_(tempValue)
         tell tempWindow to showOver_(MainWindow)
+        log_event("Show Temp Progress..opened")
     end showTempProgress
     
     on hideTempProgress()
+        log_event("Show Temp Progress..closed")
         tell current application's NSApp to endSheet_(tempWindow)
     end hideTempProgress
+    
+    on tempProgressUpdate(x,message)
+        if x doesn't equal null then
+            tell tempBar1 to incrementBy_(x)
+        end if
+        if message doesn't equal null then
+            tell tempDetail1 to setStringValue_(message)
+        end if
+    end tempProgressUpdate
+    
+    on archiveButtonPress_(sender)
+        areYouSure("Are you sure you want to Archive?","startArchive")
+    end archiveButtonPress_
+    
+    on showFilesExistWindow()
+        log_event("Car Number exists...")
+        set existsNumber to carNumber
+        tell existsWindow to showOver_(MainWindow)
+        log_event("Car Number exists...opened")
+    end showFilesExistWindow
+    
+    on closeFilesExistWindow()
+        tell current application's NSApp to endSheet_(existsWindow)
+        log_event("Car Number exists...closed")
+    end closeFilesExistWindow
+    
+    on cancelFilesExist_(sender)
+        log_event("Car Number exists...user canceled")
+        closeFilesExistWindow()
+        cancelArchive()
+    end calcelFilesExist_
+    
+    on continueFilesExist_(sender)
+        log_event("Car Number exists...user continue")
+        --Check what the user indicated to do via radio buttons
+        if existsSelection as string = "Overwrite" then
+            log_event("Car Number exists...Overwrite")
+            set overwrite to true
+            --move on to next step and overwrite
+            closeFilesExistWindow()
+            delay 0.3
+            performSelector_withObject_afterDelay_("prepareImagesForArchive", missing value, 0.01)
+        else if existsSelection as string = "Change the number to:" then
+            log_event("Car Number exists...Change number to " & existsNumber as string)
+            set carNumber to existsNumber as string
+            --Try again with new car number
+            closeFilesExistWindow()
+            delay 0.3
+            performSelector_withObject_afterDelay_("startArchive", missing value, 0.01)
+        end if
+    end continueFilesExist_
+    
+    on forceFilesExist_(sender)
+        if files_exist = false then
+            log "files_exist = true"
+            set files_exist to true
+        else if files_exist = true then
+            log "files_exist = false"
+            set files_exist to false
+        end if
+    end forceFilesExist_
+    
+    on forceFinishProcess_(sender)
+        set processNumber to 35
+    end forceFinishProcess_
 
     
     (* ======================================================================
@@ -858,11 +1147,12 @@ script AppDelegate
                 log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
             end try
         end repeat
-        set Download1_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download1" as string) as alias
-        set Download2_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download2" as string) as alias
-        set Download3_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download3" as string) as alias
-        set Download4_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4" as string) as alias
-        set processedFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Processed" as string) as alias
+        set Download1_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download1:" as string) as alias
+        set Download2_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download2:" as string) as alias
+        set Download3_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download3:" as string) as alias
+        set Download4_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4:" as string) as alias
+        set processedFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Processed:" as string) as alias
+        set prearchiveFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Prearchive:" as string) as alias
         log_event("Checking for Cache Folders...Finished")
     end checkCacheFolders_
     
@@ -941,8 +1231,20 @@ script AppDelegate
         set choice to (choose folder) as string
         tell defaults to setObject_forKey_(choice, "saveFolderloc")
         retrieveDefaults_(me)
+        updateSavefolderLocLabel()
         log_event("Change Save folder location...Finished")
     end changeSaveFolderloc_
+    
+    on showSaveFolder_(sender)
+        global saveFolderloc
+        log_event("Opening Save Folder...")
+        tell app "Finder"
+            make new Finder window
+            activate
+            set target of window 1 to saveFolderloc
+        end tell
+        log_event("Opening Save Folder...Done")
+    end showSaveFolder_
     
     on changeRawFolderloc_(sender)
         --Change the save folder location
@@ -951,8 +1253,20 @@ script AppDelegate
         set choice to (choose folder) as string
         tell defaults to setObject_forKey_(choice, "rawFolderloc")
         retrieveDefaults_(me)
+        updateRawfolderLocLabel()
         log_event("Change Raw folder location...Finished")
     end changeRawFolderloc_
+    
+    on showRawFolder_(sender)
+        global rawFolderloc
+        log_event("Opening Raw Folder...")
+        tell app "Finder"
+            make new Finder window
+            activate
+            open folder rawFolderloc
+        end tell
+        log_event("Opening Raw Folder...Done")
+    end showRawFolder_
     
     on retrieveDefaults_(sender)
         --Read the preferences from the preferences file
@@ -960,8 +1274,8 @@ script AppDelegate
         global rawFolderloc
         log_event("Read in Preferences...")
         tell defaults
-            set saveFolderloc to objectForKey_("saveFolderloc")
-            set rawFolderloc to objectForKey_("rawFolderloc")
+            set saveFolderloc to objectForKey_("saveFolderloc") as string
+            set rawFolderloc to objectForKey_("rawFolderloc") as string
         end tell
         log_event("Save Folder Location: " & saveFolderloc)
         log_event("Save Folder Location: " & rawFolderloc)
@@ -1040,12 +1354,18 @@ script AppDelegate
     (* ======================================================================
                                 Hanlder for logging!
      ====================================================================== *)
-	
+    
     on log_event(themessage)
         --Log event, then write to rolling log file.
         log themessage
         set theLine to (do shell script "date  +'%Y-%m-%d %H:%M:%S'" as string) & " " & themessage
         do shell script "echo " & theLine & " >> ~/Library/Logs/RoundHouseHelper.log"
+        tell LogWindow
+            setEditable_(1)
+            insertText_(themessage & return)
+            setEditable_(0)
+            setSelectable_(0)
+        end tell
     end log_event
     
     
