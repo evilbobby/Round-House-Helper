@@ -96,6 +96,20 @@ script AppDelegate
     --Already exists window
     property existsSelection : "Overwrite"
     property existsNumber : missing value
+    --Globals
+    property dropletFolder : null
+    property drop1Name : "Download1_Droplet"
+    property drop2Name : "Download2_Droplet"
+    property drop3Name : "Download3_Droplet"
+    property initializing : true
+    property clearCacheTimer : 1
+    property ClearCacheCountDown : true
+    property RoundHouseHelper_folder : null
+    property curView : null
+    property curTempMaxValue : null
+    property saveFolderloc : null
+    property rawFolderloc : null
+    property dropletsExist : null
     
     
     (* ======================================================================
@@ -104,9 +118,6 @@ script AppDelegate
     
     --CLEAR CACHE HANDLER
     on clearCache()
-        global clearCacheTimer
-        global ClearCacheCountDown
-        global RoundHouseHelper_folder
         
         --Reset for start if this is my first round
         if clearCacheTimer = 1 then resetForStart()
@@ -129,7 +140,7 @@ script AppDelegate
             tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
             log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
             --delete all files in folder
-            --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
+            do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
             set clearCacheTimer to clearCacheTimer + 1
             if clearCacheTimer = 8 then
                 set clearCacheTimer to 1
@@ -360,7 +371,7 @@ script AppDelegate
                 log_event("Waiting for image to download...Done")
                 log_event("Sending image to Photoshop...")
                 --Send the image to photoshop using the correct droplet
-                --tell app "Finder" to open processImage using curDroplet
+                tell app "Finder" to open processImage using curDroplet
                 set meFinished to true
                 log_event("Waiting for droplet...")
             end if
@@ -466,7 +477,6 @@ script AppDelegate
     
     --CLEAR THE CACHE DURING A "RESHOOT/NEW" FUNCTION
     on reshootClearCache()
-        global RoundHouseHelper_folder
         
         log_event("Reshoot Clear Cache...Reshoot" & reshootSel)
         showTempProgress("Preparing to Reshoot "& reshootSel & "...",4,1)
@@ -567,8 +577,6 @@ script AppDelegate
     
     --START ARCHIVING
     on startArchive()
-        global curTempMaxValue
-        
         set curTempMaxValue to 88
         log_event("Archiving...")
         log_event("Archiving...Preparing")
@@ -583,8 +591,6 @@ script AppDelegate
     
     --GET THE CARNUMBER AND CHECK IF IT ALREADY EXISTS
     on getFilenameCheckExists()
-        global saveFolderloc
-        global rawFolderloc
         
         --Get the car Number (only if it isn't already set)
         if carNumber = null then
@@ -687,7 +693,6 @@ script AppDelegate
     
     --CHECK DOWNLOAD 4 - RENAME AND MOVE TO PROCESSED FOLDER
     on checkdownload4()
-        global curTempMaxValue
         set thefiles to false
         
         --try to get the contents of the folder
@@ -706,7 +711,7 @@ script AppDelegate
         
         --if they exists rename & move them to the processed folder
         if thefiles = true then
-            set api_filenumber to 1
+            set api_filenumber to 0
             log_event("Archiving...Processing download4 files")
             --rename the files
             repeat with api in thecontents
@@ -735,8 +740,6 @@ script AppDelegate
     
     --MOVE ALL OF THE DATA AROUND AND COPY THE FILES TO THE SAVED FOLDER
     on organizeData()
-        global RoundHouseHelper_folder
-        global saveFolderloc
         log_event("Archiving...Organize Data")
         
         --move images from each download folder to the prearchive folder
@@ -770,7 +773,6 @@ script AppDelegate
     
     --ZIP THE PREARCHIVE CONTENTS
     on doArchive()
-        global rawFolderloc
         log_event("Archiving...Prepare to zip Prearchive folder")
         
         --try to remove old data if it exists
@@ -819,21 +821,20 @@ script AppDelegate
      ====================================================================== *)
     
     on applicationWillFinishLaunching_(aNotification)
-        global initializing
         
         log_event("==========PROGRAM INITILIZE=========")
-        --Define Globals
-        defineGlobals()
-        --Start at correct View
-        changeView_(me)
-        --Set/Get Preferences
-        tell current application's NSUserDefaults to set defaults to standardUserDefaults()
-        tell defaults to registerDefaults_({saveFolderloc:((path to desktop)as string),rawFolderloc:((path to desktop)as string)})
-        retrieveDefaults_(me)
         --Routine Check Cache folders
         checkCacheFolders_(me)
         --Check for Droplets
         checkDroplets_(me)
+        --Set/Get Preferences
+        tell current application's NSUserDefaults to set defaults to standardUserDefaults()
+        tell defaults to registerDefaults_({saveFolderloc:((path to desktop)as string),rawFolderloc:((path to desktop)as string)})
+        retrieveDefaults_(me)
+        --set curView
+        set curView to MainView
+        --Start at correct View
+        changeView_(me)
         
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to false
@@ -850,7 +851,6 @@ script AppDelegate
     
     -- View changing handler for multiple view changes.
     on changeView_(sender)
-        global curView
 		-- get frame of replacement view
 		if curView = MainView then
 			set theFrame to SearchView's frame()
@@ -993,8 +993,6 @@ script AppDelegate
     end searchButton
     
     on resetForStart()
-        global curView
-        
         tell searchDetail1 to setStringValue_("Press Start")
         tell searchButton1 to setTitle_("Start")
         tell searchBar1 to stopAnimation_(me)
@@ -1156,103 +1154,74 @@ script AppDelegate
                         Handlers for startup & shutdown!
      ====================================================================== *)
     
-    --DEFINE GLOBALS
-    on defineGlobals()
-        global dropletFolder
-        global drop1Name
-        global drop2Name
-        global drop3Name
-        global initializing
-        global clearCacheTimer
-        global ClearCacheCountDown
-        global RoundHouseHelper_folder
-        global curView
-        
-        --Declare MainView as starting view
-        set curView to MainView
-        --initializing turned to false after applicationWillFinishLaunching
-        set initializing to true
-        --Droplet data
-        set dropletFolder to (path to library folder) & "Caches:RoundHouseHelper:Droplets:" as string
-        set drop1Name to "Download1_Droplet"
-        set drop2Name to "Download2_Droplet"
-        set drop3Name to "Download3_Droplet"
-        --ClearCache
-        set clearCacheTimer to 1
-        set ClearCacheCountDown to true
-        --Roundhousehelper cache folder
-        set RoundHouseHelper_folder to (path to library folder) & "Caches:RoundHouseHelper:" as string
-        
-        log_event("Default Globals Loaded...")
-    end defineGlobals
-    
     --CHECK FOR CACHE FOLDERS
     on checkCacheFolders_(sender)
-        global RoundHouseHelper_folder
-        
         log_event("Checking for Cache Folders...")
         set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Download4Final", "Processed", "Prearchive", "Droplets"}
         set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
         
+        --Roundhousehelper cache folder
         try
             tell application "Finder" to make new folder at CacheFolderLoc with properties {name:"RoundHouseHelper"}
             log_event("Cache Folder 'RoundHouseHelper' created at... " & CacheFolderLoc as string)
         end try
+        set RoundHouseHelper_folder to (path to library folder) & "Caches:RoundHouseHelper:" as string
+        
+        --create each folder from the list
         repeat with aFolder in CacheFolderList
             try
                 tell application "Finder" to make new folder at (RoundHouseHelper_folder as alias) with properties {name:aFolder}
                 log_event("Cache Folder '" & (aFolder as string) & "' created at... " & RoundHouseHelper_folder as string)
             end try
         end repeat
-        set Download1_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download1:" as string) as alias
-        set Download2_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download2:" as string) as alias
-        set Download3_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download3:" as string) as alias
-        set Download4_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4:" as string) as alias
-        set processedFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Processed:" as string) as alias
-        set prearchiveFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Prearchive:" as string) as alias
-        set Download4FinalFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4Final:" as string) as alias
+        
+        --set cache folder aliases
+        set Download1_folder to (RoundHouseHelper_folder & "Download1:" as string) as alias
+        set Download2_folder to (RoundHouseHelper_folder & "Download2:" as string) as alias
+        set Download3_folder to (RoundHouseHelper_folder & "Download3:" as string) as alias
+        set Download4_folder to (RoundHouseHelper_folder & "Download4:" as string) as alias
+        set processedFolder to (RoundHouseHelper_folder & "Processed:" as string) as alias
+        set prearchiveFolder to (RoundHouseHelper_folder & "Prearchive:" as string) as alias
+        set Download4FinalFolder to (RoundHouseHelper_folder & "Download4Final:" as string) as alias
+        set dropletFolder to (RoundHouseHelper_folder & "Droplets:" as string)
         log_event("Checking for Cache Folders...Finished")
     end checkCacheFolders_
     
     --CHECK FOR DROPLETS
     on checkDroplets_(sender)
-        global dropletsExist
-        global dropletFolder
-        global drop1Name
-        global drop2Name
-        global drop3Name
-        global initializing
-        
         log_event("Checking for Droplets...")
         --set defaults
         set dropletsExist to {droplet1exist:false,droplet2exist:false,droplet3exist:false}
         --gets contents of droplets folder
-        tell Application "Finder" to set dropFolderCont to every file in (dropletFolder as alias) as string
+        try
+            set dropFolderCont to null
+            tell Application "Finder" to set dropFolderCont to every file in (dropletFolder as alias) as string
+        end try
         --update droplets exists if droplets are found
         if dropFolderCont as text contains drop1Name then
             set droplet1exist of dropletsExist to true
+            set Droplet1Location to (dropletFolder & drop1Name & ".app" as string) as alias
             if initializing is true then log_event("Found " & drop1Name as string)
             tell drop1Indicator to setIntValue_(1)
-            else
+        else
             tell drop1Indicator to setIntValue_(3)
         end if
         if dropFolderCont as text contains drop2Name then
             set droplet2exist of dropletsExist to true
+            set Droplet2Location to (dropletFolder & drop2Name & ".app" as string) as alias
             if initializing is true then log_event("Found " & drop2Name as string)
             tell drop2Indicator to setIntValue_(1)
-            else
+        else
             tell drop2Indicator to setIntValue_(3)
         end if
         if dropFolderCont as text contains drop3Name then
             set droplet3exist of dropletsExist to true
+            set Droplet3Location to (dropletFolder & drop3Name & ".app" as string) as alias
             if initializing is true then log_event("Found " & drop3Name as string)
             tell drop3Indicator to setIntValue_(1)
-            else
+        else
             tell drop3Indicator to setIntValue_(3)
         end if
-        set Droplet1Location to (dropletFolder & drop1Name & ".app" as string) as alias
-        set Droplet2Location to (dropletFolder & drop2Name & ".app" as string) as alias
-        set Droplet3Location to (dropletFolder & drop3Name & ".app" as string) as alias
         log_event("Checking for Droplets...Finished")
     end checkDroplets_
     
@@ -1262,7 +1231,6 @@ script AppDelegate
     
     on updateSavefolderLocLabel()
         --Update the text field containing the save folder location
-        global saveFolderloc
         tell savefolderlocLabel
             setEditable_(1)
             setStringValue_(saveFolderloc)
@@ -1273,7 +1241,6 @@ script AppDelegate
     
     on updateRawfolderLocLabel()
         --Update the text field containing the save folder location
-        global rawFolderloc
         tell rawFolderloclabel
             setEditable_(1)
             setStringValue_(rawFolderloc)
@@ -1284,7 +1251,6 @@ script AppDelegate
     
     on changeSaveFolderloc_(sender)
         --Change the save folder location
-        global saveFolderloc
         log_event("Change Save folder location...")
         set choice to (choose folder) as string
         tell defaults to setObject_forKey_(choice, "saveFolderloc")
@@ -1294,7 +1260,6 @@ script AppDelegate
     end changeSaveFolderloc_
     
     on showSaveFolder_(sender)
-        global saveFolderloc
         log_event("Opening Save Folder...")
         tell app "Finder"
             make new Finder window
@@ -1306,7 +1271,6 @@ script AppDelegate
     
     on changeRawFolderloc_(sender)
         --Change the save folder location
-        global rawFolderloc
         log_event("Change Raw folder location...")
         set choice to (choose folder) as string
         tell defaults to setObject_forKey_(choice, "rawFolderloc")
@@ -1316,7 +1280,6 @@ script AppDelegate
     end changeRawFolderloc_
     
     on showRawFolder_(sender)
-        global rawFolderloc
         log_event("Opening Raw Folder...")
         tell app "Finder"
             make new Finder window
@@ -1328,8 +1291,6 @@ script AppDelegate
     
     on retrieveDefaults_(sender)
         --Read the preferences from the preferences file
-        global saveFolderloc
-        global rawFolderloc
         log_event("Read in Preferences...")
         tell defaults
             set saveFolderloc to objectForKey_("saveFolderloc") as string
@@ -1341,13 +1302,6 @@ script AppDelegate
     end retrieveDefaults_
     
     on dropletButtons_(sender)
-        global dropletsExist
-        global dropletFolder
-        global drop1Name
-        global drop2Name
-        global drop3Name
-        global initializing
-        
         log_event("Replace Droplet Button..." & (title of sender as string) as string)
         
         --Check for Droplets
@@ -1387,6 +1341,7 @@ script AppDelegate
             do shell script "rm -rf " & quoted form of POSIX path of (dropletFolder & dropName & ".app" as string)
             log_event("Removed old droplet...")
         end if
+        
         try
             --Try to copy in new droplet
             do shell script "cp -rf " & quoted form of POSIX path of newDropletLoc & " " & quoted form of POSIX path of dropletFolder
