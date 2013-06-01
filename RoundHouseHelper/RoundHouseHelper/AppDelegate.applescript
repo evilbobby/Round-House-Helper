@@ -67,6 +67,7 @@ script AppDelegate
     property Download4_folder : null
     property processedFolder : null
     property prearchiveFolder : null
+    property Download4FinalFolder : null
     --Droplets
     property Droplet1Location : null
     property Droplet2Location : null
@@ -124,13 +125,13 @@ script AppDelegate
             performSelector_withObject_afterDelay_("clearCache", missing value, cacheWait)
         else if ClearCacheCountDown = false and cancelCache = false and pauseCache = false then
             --After the coutdown we can now clear the cache
-            set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive"}
+            set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Download4Final", "Processed", "Prearchive"}
             tell cachelabel to setStringValue_("Clearing Cache..." & (item clearCacheTimer of CacheFolderList) as string)
             log_event("Clear Cache...Clearing " & (item clearCacheTimer of CacheFolderList) as string)
             --delete all files in folder
             --do shell script "rm -rf " & POSIX path of (RoundHouseHelper_folder & item clearCacheTimer of CacheFolderList & ":*" as string)
             set clearCacheTimer to clearCacheTimer + 1
-            if clearCacheTimer = 7 then
+            if clearCacheTimer = 8 then
                 set clearCacheTimer to 1
                 set ClearCacheCountDown to true
                 tell cachelabel to setStringValue_("Clearing Cache...Done!")
@@ -566,9 +567,12 @@ script AppDelegate
     
     --START ARCHIVING
     on startArchive()
+        global curTempMaxValue
+        
+        set curTempMaxValue to 88
         log_event("Archiving...")
         log_event("Archiving...Preparing")
-        showTempProgress("Preparing to archive current take...",88,0)
+        showTempProgress("Preparing to archive current take...",curTempMaxValue,0)
         performSelector_withObject_afterDelay_("getFilenameCheckExists", missing value, 0.01)
     end startArchive
     
@@ -576,9 +580,6 @@ script AppDelegate
         log_event("Archiving...Canceled")
         doneArchive()
     end cancelArchive
-    
-    tell tempBar1 to incrementBy_(1)
-    tell tempDetail1 to setStringValue_("Ready to Reshoot A!")
     
     --GET THE CARNUMBER AND CHECK IF IT ALREADY EXISTS
     on getFilenameCheckExists()
@@ -601,7 +602,6 @@ script AppDelegate
             tell application "Finder" to set Completed_folder_contents to (entire contents of ((saveFolderloc & carNumber & ":" as string) as alias) as text)
             if Completed_folder_contents contains "-edc-" or Completed_folder_contents contains "-edo-" or Completed_folder_contents contains "-top-" then set files_exist to true
         end try
-        tempProgressUpdate(1,null)
         try
             tell application "Finder" to set zip_folder_contents to (entire contents of (rawFolderloc as alias) as text)
             if zip_folder_contents contains (carNumber & ".zip" as string) then set files_exist to true
@@ -678,8 +678,60 @@ script AppDelegate
         end repeat
         log_event("Archiving...Duplicate-Rename-Resize finished")
         
-        performSelector_withObject_afterDelay_("organizeData", missing value, 0.01)
+        performSelector_withObject_afterDelay_("checkdownload4", missing value, 0.01)
     end prepareImagesForArchive
+    
+    on dothething_(sender)
+        checkdownload4()
+    end dothething_
+    
+    --CHECK DOWNLOAD 4 - RENAME AND MOVE TO PROCESSED FOLDER
+    on checkdownload4()
+        global curTempMaxValue
+        set thefiles to false
+        
+        --try to get the contents of the folder
+        log_event("Archiving...Checking for download4 files")
+        try
+            tell app "Finder" to set thecontents to every file of Download4FinalFolder
+            --get the number of items
+            set countofitems to (count of items in thecontents)
+            --update the max value on the bar
+            tell tempBar1 to setMaxValue_(curTempMaxValue + countofitems as integer)
+            set thefiles to true
+            log_event("Archiving...download4 files exist!")
+        on error errmsg
+            log_event("Archiving...download4 files do not exist")
+        end try
+        
+        --if they exists rename & move them to the processed folder
+        if thefiles = true then
+            set api_filenumber to 1
+            log_event("Archiving...Processing download4 files")
+            --rename the files
+            repeat with api in thecontents
+                log_event("Archiving...Gather information about: " & api as string)
+                --set file number
+                set api_filenumber to api_filenumber + 1
+                if api_filenumber < 9 then set api_filenumber to  ("0" & api_filenumber as string)
+                --rename the files
+                tell application "Finder"
+                    --Get the name of the file
+                    set original_name to name of api as string
+                    --get the extention of the file
+                    set api_extention to name extension of api as string
+                end tell
+                tempProgressUpdate(1,"Processing " & (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
+                delay 0.05
+                log_event("Archiving...duplicate and rename file")
+                --rename and move the file
+                do shell script "mv " & POSIX path of (api as alias) & " " & POSIX path of (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string)
+            end repeat
+            
+            log_event("Archiving...Download4 folder finished")
+            performSelector_withObject_afterDelay_("organizeData", missing value, 0.01)
+        end if
+    end checkdownload4
     
     --MOVE ALL OF THE DATA AROUND AND COPY THE FILES TO THE SAVED FOLDER
     on organizeData()
@@ -716,6 +768,7 @@ script AppDelegate
         performSelector_withObject_afterDelay_("doArchive", missing value, 0.01)
     end organizeData
     
+    --ZIP THE PREARCHIVE CONTENTS
     on doArchive()
         global rawFolderloc
         log_event("Archiving...Prepare to zip Prearchive folder")
@@ -744,6 +797,7 @@ script AppDelegate
         performSelector_withObject_afterDelay_("doneArchive", missing value, 0.01)
     end doArchive
     
+    --FINISHED!
     on doneArchive()
         set carNumber to null
         set overwrite to false
@@ -1069,6 +1123,9 @@ script AppDelegate
             --move on to next step and overwrite
             closeFilesExistWindow()
             delay 0.3
+            --reopen the temp bar
+            tell tempWindow to showOver_(MainWindow)
+            delay 0.1
             performSelector_withObject_afterDelay_("prepareImagesForArchive", missing value, 0.01)
         else if existsSelection as string = "Change the number to:" then
             log_event("Car Number exists...Change number to " & existsNumber as string)
@@ -1134,7 +1191,7 @@ script AppDelegate
         global RoundHouseHelper_folder
         
         log_event("Checking for Cache Folders...")
-        set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Processed", "Prearchive", "Droplets"}
+        set CacheFolderList to {"Download1", "Download2", "Download3", "Download4", "Download4Final", "Processed", "Prearchive", "Droplets"}
         set CacheFolderLoc to ((path to library folder) & "Caches:" as string) as alias
         
         try
@@ -1153,6 +1210,7 @@ script AppDelegate
         set Download4_folder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4:" as string) as alias
         set processedFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Processed:" as string) as alias
         set prearchiveFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Prearchive:" as string) as alias
+        set Download4FinalFolder to ((path to library folder) & "Caches:" & "RoundHouseHelper:Download4Final:" as string) as alias
         log_event("Checking for Cache Folders...Finished")
     end checkCacheFolders_
     
