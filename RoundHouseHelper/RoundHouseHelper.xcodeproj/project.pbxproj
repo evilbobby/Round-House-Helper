@@ -15,6 +15,7 @@
 		67E7486E17383B60004FC3CD /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 67E7486C17383B60004FC3CD /* Credits.rtf */; };
 		67E7487017383B60004FC3CD /* AppDelegate.applescript in Sources */ = {isa = PBXBuildFile; fileRef = 67E7486F17383B60004FC3CD /* AppDelegate.applescript */; };
 		67E7487317383B60004FC3CD /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 67E7487117383B60004FC3CD /* MainMenu.xib */; };
+		67F97B1D1759EF6E006CF41A /* round_House_icon_v2.icns in Resources */ = {isa = PBXBuildFile; fileRef = 67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		67E7486D17383B60004FC3CD /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
 		67E7486F17383B60004FC3CD /* AppDelegate.applescript */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.applescript; path = AppDelegate.applescript; sourceTree = "<group>"; };
 		67E7487217383B60004FC3CD /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = round_House_icon_v2.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,6 +53,7 @@
 		67E7484F17383B60004FC3CD = {
 			isa = PBXGroup;
 			children = (
+				67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */,
 				67E7486317383B60004FC3CD /* RoundHouseHelper */,
 				67E7485A17383B60004FC3CD /* Frameworks */,
 				67E7485917383B60004FC3CD /* Products */,
@@ -164,6 +167,7 @@
 				67E7486817383B60004FC3CD /* InfoPlist.strings in Resources */,
 				67E7486E17383B60004FC3CD /* Credits.rtf in Resources */,
 				67E7487317383B60004FC3CD /* MainMenu.xib in Resources */,
+				67F97B1D1759EF6E006CF41A /* round_House_icon_v2.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
