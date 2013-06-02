@@ -60,6 +60,7 @@ script AppDelegate
     property reshootSel : null
     property CacheCleared : false
     property isPaused : false
+    property finishedProcessing : false
     --Download Folders
     property Download1_folder : null
 	property Download2_folder : null
@@ -237,6 +238,8 @@ script AppDelegate
         --If we pause and come back here we will throw off the image count
         --so when paused we resume at the next step (findNextImage)
         set lastTask to "findNextImage"
+        --easy way to update finishedProcessing
+        set finishedProcessing to false
         
         if processNumber ≥ 1 then
             set imageNumber to processNumber
@@ -274,15 +277,22 @@ script AppDelegate
             --Stop processing once I finish all 17 images
             set meFinished to true
             set reshootSel to null
+            --force finish on user window
+            set processNumber to 35
+            set imageNumber to "17"
+            log_event("Finished Reshoot A!")
         else if reshootsel = "B" and processNumber = 35 then
             --Stop processing once I finish all 17 images
-            --set meFinished to true happens at end of processing above
+            --meFinished happens at end of processing above
             set reshootSel to null
+            log_event("Finished Reshoot B!")
         end if
         
         --Create next image name
-        if imageNumber < 10 then set imageNumber to "0" & imageNumber as string
-        set processImageName to "_" & curBasename & "_" & imageNumber & ".NEF" as string
+        if processNumber < 35 then
+            if imageNumber < 10 then set imageNumber to "0" & imageNumber as string
+            set processImageName to "_" & curBasename & "_" & imageNumber & ".NEF" as string
+        end if
         
         --Update the window
         tell MainBar2 to setDoubleValue_(processNumber)
@@ -292,7 +302,8 @@ script AppDelegate
             tell MainDetail2 to setStringValue_("Finished!")
         end if
         
-        if processNumber = "17" then
+        --update the log
+        if imageNumber = "17" then
             log_event("Image Processing done!")
         else
             log_event("Next Image: " & processImageName)
@@ -313,6 +324,7 @@ script AppDelegate
         else if meFinished = true then
             --End Processing
             set meFinished to false
+            set finishedProcessing to true
         else
             --Always move on to the next step, never restart myself
             performSelector_withObject_afterDelay_("findNextImage", missing value, Delay1)
@@ -458,21 +470,24 @@ script AppDelegate
     on reshootA()
         set reshootSel to "A"
         set reqReshoot to true
-        if isPaused is true then quietUserRequest()
+        enableArchive(false)
+        if isPaused is true or finishedProcessing is true then quietUserRequest()
     end reshootA
     
     --IF RESHOOT "B" IS SELECTED
     on reshootB()
         set reshootSel to "B"
         set reqReshoot to true
-        if isPaused is true then quietUserRequest()
+        enableArchive(false)
+        if isPaused is true or finishedProcessing is true then quietUserRequest()
     end reshootB
     
     --IF RESHOOT "NEW" IS SELECTED
     on reshootNew()
         set reshootSel to "N"
         set reqReshoot to true
-        if isPaused is true then quietUserRequest()
+        enableArchive(false)
+        if isPaused is true or finishedProcessing is true then quietUserRequest()
     end reshootNew
     
     --CLEAR THE CACHE DURING A "RESHOOT/NEW" FUNCTION
@@ -577,7 +592,7 @@ script AppDelegate
     
     --START ARCHIVING
     on startArchive()
-        set curTempMaxValue to 88
+        set curTempMaxValue to 89
         log_event("Archiving...")
         log_event("Archiving...Preparing")
         showTempProgress("Preparing to archive current take...",curTempMaxValue,0)
@@ -687,10 +702,6 @@ script AppDelegate
         performSelector_withObject_afterDelay_("checkdownload4", missing value, 0.01)
     end prepareImagesForArchive
     
-    on dothething_(sender)
-        checkdownload4()
-    end dothething_
-    
     --CHECK DOWNLOAD 4 - RENAME AND MOVE TO PROCESSED FOLDER
     on checkdownload4()
         set thefiles to false
@@ -702,7 +713,7 @@ script AppDelegate
             --get the number of items
             set countofitems to (count of items in thecontents)
             --update the max value on the bar
-            tell tempBar1 to setMaxValue_(curTempMaxValue + countofitems as integer)
+            tell tempBar1 to setMaxValue_(curTempMaxValue + (countofitems * 2) as integer)
             set thefiles to true
             log_event("Archiving...download4 files exist!")
         on error errmsg
@@ -726,7 +737,19 @@ script AppDelegate
                     --get the extention of the file
                     set api_extention to name extension of api as string
                 end tell
-                tempProgressUpdate(1,"Processing " & (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
+                tempProgressUpdate(1,"Resizing " & (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
+                delay 0.05
+                log_event("Archiving...resize file")
+                --resize the image
+                tell application "Image Events"
+                    launch
+                    set this_image to open api as alias
+                    scale this_image to size 2802
+                    save this_image with icon
+                    close this_image
+                end tell
+                --duplicate and rename the file
+                tempProgressUpdate(1,"Rename " & (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
                 delay 0.05
                 log_event("Archiving...duplicate and rename file")
                 --rename and move the file
@@ -760,6 +783,20 @@ script AppDelegate
             log_event("Archiving...Folder created")
         on error errmsg
             log_event("Archiving...Folder already exists")
+        end try
+        
+        --remove any "manual" images if overwrite is true
+        log_event("Archiving...Check for/Remove any previous MANUALUPLOAD images")
+        tempProgressUpdate(1,"Check for/Remove any previous MANUALUPLOAD images...")
+        try
+            if overwrite = true then
+                tell app "Finder" to set thecontents to every file of ((saveFolderloc & carNumber as string) as alias) whose name contains "UPLOADMANUAL"
+                log_event("Archiving...Removing existing MANUALUPLOAD images...")
+                repeat with api in thecontents
+                    log_event("Archiving...Removing " & api as string)
+                    do shell script "rm -rf " & POSIX path of (api as alias)
+                end repeat
+            end if
         end try
         
         --Copy the new files over (overwrite automatically)
@@ -823,6 +860,8 @@ script AppDelegate
     on applicationWillFinishLaunching_(aNotification)
         
         log_event("==========PROGRAM INITILIZE=========")
+        --check the log and backup if over max line count (30,000)
+        checklog()
         --Routine Check Cache folders
         checkCacheFolders_(me)
         --Check for Droplets
@@ -1117,6 +1156,7 @@ script AppDelegate
         --Check what the user indicated to do via radio buttons
         if existsSelection as string = "Overwrite" then
             log_event("Car Number exists...Overwrite")
+            --set overwrite
             set overwrite to true
             --move on to next step and overwrite
             closeFilesExistWindow()
@@ -1380,6 +1420,24 @@ script AppDelegate
             setSelectable_(0)
         end tell
     end log_event
+    
+    on checklog()
+        log_event("Checking log...")
+        --get the count of lines in the log file
+        set thecount to (do shell script "wc -l ~/Library/Logs/RoundHouseHelper.log")
+        --make the returned string into an integer
+        set thecount to (text 1 thru ((offset of the "/" in thecount) - 1) in thecount) as integer
+        if thecount > 30000 then
+            log_event("Checking log...Log is over 30000 lines!")
+            log_event("Checking log...Creating BACKUP of old log")
+            do shell script "mv ~/Library/Logs/RoundHouseHelper.log ~/Library/Logs/RoundHouseHelper-BACKUP.log"
+            delay 0.3
+            log_event("==========PROGRAM INITILIZE=========")
+            log_event("------BACKUP OF OLD LOG CREATED-----")
+        else
+            log_event("Checking log...Done!")
+        end if
+    end checklog
     
     
 end script
