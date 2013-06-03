@@ -1018,13 +1018,24 @@ script AppDelegate
     end cancelReshootNewButton_
 
     on searchButton_(sender)
+        log_event("Search Button selected....")
+        --Figure out what state the button is in
         if title of sender as string is "Start" then
+            --Make sure the droplets exist
+            checkDroplets_(me)
+            if droplet1exist of dropletsExist = false or droplet2exist of dropletsExist = false or droplet3exist of dropletsExist = false then
+                log_event("Droplet Missing!")
+                tell searchButton1 to setState_(0)
+                display dialog "CAN NOT START: MISSING A DROPLET." &  "Load new droplets in the Preferences window."
+                return
+            end if
             --If we still haven't started, clear cache then start searching
             tell searchButton1 to setState_(0)
             StartClearCacheButton_(me)
         else if title of sender as string = "Pause" and state of sender as string = "1" then
             --If we started then, pause the search
             set pauseUser to true
+            log_event("User Request... Pause")
         else if state of sender as string = "0" then
             --If we're paused, resume searching
             resumeSearch()
@@ -1098,6 +1109,7 @@ script AppDelegate
         if state of sender as string = "1" then
             --Pause everything (request)
             set pauseUser to true
+            log_event("User Request... Pause")
         else if state of sender as string = "0" then
             --Resume Processing
             mainResume()
@@ -1244,6 +1256,8 @@ script AppDelegate
             if initializing is true then log_event("Found " & drop1Name as string)
             tell drop1Indicator to setIntValue_(1)
         else
+            set droplet1exist of dropletsExist to false
+            if initializing is true then log_event("MISSING DROPLET " & drop1Name as string)
             tell drop1Indicator to setIntValue_(3)
         end if
         if dropFolderCont as text contains drop2Name then
@@ -1252,6 +1266,8 @@ script AppDelegate
             if initializing is true then log_event("Found " & drop2Name as string)
             tell drop2Indicator to setIntValue_(1)
         else
+            set droplet2exist of dropletsExist to false
+            if initializing is true then log_event("MISSING DROPLET " & drop2Name as string)
             tell drop2Indicator to setIntValue_(3)
         end if
         if dropFolderCont as text contains drop3Name then
@@ -1260,6 +1276,8 @@ script AppDelegate
             if initializing is true then log_event("Found " & drop3Name as string)
             tell drop3Indicator to setIntValue_(1)
         else
+            set droplet3exist of dropletsExist to false
+            if initializing is true then log_event("MISSING DROPLET " & drop13Name as string)
             tell drop3Indicator to setIntValue_(3)
         end if
         log_event("Checking for Droplets...Finished")
@@ -1337,7 +1355,7 @@ script AppDelegate
             set rawFolderloc to objectForKey_("rawFolderloc") as string
         end tell
         log_event("Save Folder Location: " & saveFolderloc)
-        log_event("Save Folder Location: " & rawFolderloc)
+        log_event("Raw Folder Location: " & rawFolderloc)
         log_event("Read in Preferences...Finished")
     end retrieveDefaults_
     
@@ -1405,7 +1423,7 @@ script AppDelegate
     end dropletButtons_
     
     (* ======================================================================
-                                Hanlder for logging!
+                                Handler for logging!
      ====================================================================== *)
     
     on log_event(themessage)
