@@ -101,6 +101,7 @@
 								</object>
 								<object class="NSMenuItem" id="417814476">
 									<reference key="NSMenu" ref="110575045"/>
+									<bool key="NSIsHidden">YES</bool>
 									<string key="NSTitle">Advanced...</string>
 									<string key="NSKeyEquiv">=</string>
 									<int key="NSKeyEquivModMask">1048576</int>
