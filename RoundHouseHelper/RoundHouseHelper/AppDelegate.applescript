@@ -180,10 +180,38 @@ script AppDelegate
         
         --When the cache is cleared, begin searching.
         if CacheCleared is true then
-            performSelector_withObject_afterDelay_("startSearch", missing value, 0.5)
+            performSelector_withObject_afterDelay_("prepareStart", missing value, 0.5)
             set CacheCleared to false
         end if
     end ClearCache_
+    
+    --PREPARE TO START SEARCHING
+    on prepareStart()
+        log_event("Preparing to start...")
+        --Check for droplets
+        log_event("Preparing to start...Check for Droplets")
+        checkDroplets_(me)
+        if droplet1exist of dropletsExist is true and droplet2exist of dropletsExist is true and droplet3exist of dropletsExist is true then
+            log_event("Preparing to start...Droplets ok!")
+        else
+            log_event("Preparing to start...DROPLETS MISSING")
+            display dialog "A Droplet is missing, Please replace them in the peferences" buttons ("Ok") default button 1 with icon (stop)
+            return
+        end if
+        --Check for download folders
+        log_event("Preparing to start...Check Save-Raw Folders")
+        retrieveDefaults_(me)
+        try
+            set testsave to saveFolderloc as alias
+            set testraw to rawFolderloc as alias
+        on error errmsg
+            log_event("Preparing to start...SAVE-RAW FOLDER MISSING")
+            display dialog "The Save or Raw folder appears to be missing. Please make sure the folders set in preferences exist." buttons ("Ok") default button 1 with icon (stop)
+            return
+        end try
+        
+        performSelector_withObject_afterDelay_("startSearch", missing value, 0.1)
+    end prepareStart
 
     --WAIT FOR THE FIRST IMAGE IN CACHE
     on searchFor()
@@ -266,12 +294,6 @@ script AppDelegate
             set curDroplet to Droplet3Location
         end if
         
-        --At the end of processing, Stop and enable the archive button
-        if processNumber = 35 then
-            enableArchive(true)
-            set meFinished to true
-        end if
-        
         --Reshoot Processing Management
         if reshootsel = "A" and processNumber = 18 then
             --Stop processing once I finish all 17 images
@@ -286,6 +308,12 @@ script AppDelegate
             --meFinished happens at end of processing above
             set reshootSel to null
             log_event("Finished Reshoot B!")
+        end if
+        
+        --At the end of processing, Stop and enable the archive button
+        if processNumber = 35 then
+            enableArchive(true)
+            set meFinished to true
         end if
         
         --Create next image name
@@ -522,7 +550,7 @@ script AppDelegate
                 log_event("Reshoot Clear Cache...Done!")
             on error errmsg
                 log_event("Reshoot Clear Cache...FAILED")
-                display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper."
+                display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper." buttons ("Ok") default button 1 with icon (stop) 
             end try
         else if reshootSel = "B" then
             try
@@ -550,7 +578,7 @@ script AppDelegate
                 log_event("Reshoot Clear Cache...Done!")
             on error errmsg
                 log_event("Reshoot Clear Cache...FAILED")
-                display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper."
+                display dialog "Error when Clearing the Cache for Reshoot. Please Close & re-open RoundHouseHelper." buttons ("Ok") default button 1 with icon (stop)
             end try
         end if
         --Hide the progress window
@@ -599,6 +627,7 @@ script AppDelegate
         performSelector_withObject_afterDelay_("getFilenameCheckExists", missing value, 0.01)
     end startArchive
     
+    --CANCEL ARCHIVE
     on cancelArchive()
         log_event("Archiving...Canceled")
         doneArchive()
@@ -829,7 +858,7 @@ script AppDelegate
         on error errmsg
             log_event("Archiving...FAILED WHILE ATTEMPTING TO CREATE ZIP FILE")
             set saved to false
-            tell me to display dialog "Failed to create .zip of raw images! Please close and re-open the Helper."
+            tell me to display dialog "Failed to create .zip of raw images! Please close and re-open the Helper." buttons ("Ok") default button 1 with icon (stop)
         end try
         
         --Done archiving
@@ -1026,7 +1055,7 @@ script AppDelegate
             if droplet1exist of dropletsExist = false or droplet2exist of dropletsExist = false or droplet3exist of dropletsExist = false then
                 log_event("Droplet Missing!")
                 tell searchButton1 to setState_(0)
-                display dialog "CAN NOT START: MISSING A DROPLET." &  "Load new droplets in the Preferences window."
+                display dialog "CAN NOT START: MISSING A DROPLET." &  "Load new droplets in the Preferences window." buttons ("Ok") default button 1 with icon (stop)
                 return
             end if
             --If we still haven't started, clear cache then start searching
@@ -1417,7 +1446,7 @@ script AppDelegate
             set initializing to false
             
             on error errmsg
-                tell me to display dialog "Error when attempting to replace droplet"
+                tell me to display dialog "Error when attempting to replace droplet" buttons ("Ok") default button 1 with icon (stop) 
                 log_event("Add/New Droplet FAILED...")
         end try
     end dropletButtons_
