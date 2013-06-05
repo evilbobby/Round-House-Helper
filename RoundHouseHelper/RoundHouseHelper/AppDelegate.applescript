@@ -61,6 +61,7 @@ script AppDelegate
     property CacheCleared : false
     property isPaused : false
     property finishedProcessing : false
+    property NumberChanged : false
     --Download Folders
     property Download1_folder : null
 	property Download2_folder : null
@@ -90,7 +91,8 @@ script AppDelegate
     property saved : true
     --DoubleCheckWindow
     property doubleCheckLabel : missing value
-    property doubleCheckHandler : null
+    property doubleCheckYesHandler : null
+    property doubleCheckNoHandler : null
     --Temp Progress Window
     property tempBar1 : missing value
     property tempDetail1 : missing value
@@ -111,6 +113,7 @@ script AppDelegate
     property saveFolderloc : null
     property rawFolderloc : null
     property dropletsExist : null
+    property D4exists : false
     
     
     (* ======================================================================
@@ -202,8 +205,9 @@ script AppDelegate
         log_event("Preparing to start...Check Save-Raw Folders")
         retrieveDefaults_(me)
         try
-            set testsave to saveFolderloc as alias
-            set testraw to rawFolderloc as alias
+            tell app "Finder" to set testsave to saveFolderloc as alias
+            tresh
+            tell app "Finder" to set testraw to rawFolderloc as alias
         on error errmsg
             log_event("Preparing to start...SAVE-RAW FOLDER MISSING")
             display dialog "The Save or Raw folder appears to be missing. Please make sure the folders set in preferences exist." buttons ("Ok") default button 1 with icon (stop)
@@ -269,8 +273,12 @@ script AppDelegate
         --easy way to update finishedProcessing
         set finishedProcessing to false
         
-        if processNumber ≥ 1 then
-            set imageNumber to processNumber
+        if processNumber = 1 then
+            if reshootsel is "A" and processNumber is 1 then
+                set imageNumber to 3
+            else
+                set imageNumber to processNumber
+            end if
             set curDownloadFolder to Download1_folder
             set curBasename to "TopDown"
             set curDroplet to Droplet1Location
@@ -624,8 +632,25 @@ script AppDelegate
         log_event("Archiving...")
         log_event("Archiving...Preparing")
         showTempProgress("Preparing to archive current take...",curTempMaxValue,0)
-        performSelector_withObject_afterDelay_("getFilenameCheckExists", missing value, 0.01)
+        performSelector_withObject_afterDelay_("updateProgressD4", missing value, 0.01)
     end startArchive
+    
+    --UPDATE THE MAXVALUE OF THE PROGRESS BAR WITH NUMBER OF IMAGES IN DOWNLOAD4
+    on updateProgressD4()
+        --Update the maxvalue depending on number of download 4 images
+        log_event("Archiving...Updating MaxValue with Download4")
+        try
+            tell app "Finder" to set thecontents to every file of Download4FinalFolder
+            --get the number of items
+            set countofitems to (count of items in thecontents)
+            --update the max value on the bar
+            tell tempBar1 to setMaxValue_(curTempMaxValue + (countofitems * 2) as integer)
+            log_event("Archiving..." & countofitems & " Download4 images found")
+        on error errmsg
+            log_event("Archiving...No Download4 images found")
+        end try
+        performSelector_withObject_afterDelay_("getFilenameCheckExists", missing value, 0.01)
+    end updateProgressD4
     
     --CANCEL ARCHIVE
     on cancelArchive()
@@ -637,11 +662,19 @@ script AppDelegate
     on getFilenameCheckExists()
         
         --Get the car Number (only if it isn't already set)
-        if carNumber = null then
-            log_event("Archiving...Get Car Number")
-            tempProgressUpdate(1,"Getting car Number...")
-            tell application "Finder" to set fullname to name of ((first item of Download1_folder) as alias)
-            set carNumber to (text 1 thru ((offset of "_" in fullname) - 1) of fullname) as string
+        if carNumber = null or  NumberChanged is false then
+            try
+                log_event("Archiving...Get Car Number")
+                tempProgressUpdate(1,"Getting car Number...")
+                tell application "Finder" to set fullname to name of ((first item of Download1_folder) as alias)
+                set carNumber to (text 1 thru ((offset of "_" in fullname) - 1) of fullname) as string
+            on error errmsg
+                hideTempProgress()
+                delay 0.1
+                log_event("Archiving FAILED - Could not get car number")
+                display dialog "Could not get CarNumber. Files are either missing or improperly named." buttons ("Ok") default button 1 with icon (stop)
+                return
+            end try
         end if
         log_event("Archiving...carNumber: " & carNumber)
         
@@ -658,7 +691,14 @@ script AppDelegate
         end try
         
         --if files exists ask the user, else continue archiving
-        if files_exist is true then
+        if files_exist is true and NumberChanged is true then
+            log_event("Archiving...images exist")
+            log_event("Archiving...Number already changed, ask to overwrite")
+            set NumberChanged to false
+            hideTempProgress()
+            delay 0.3
+            areYouSure(carNumber & " exists. overwrite anyways?","OverwriteResume","startArchive")
+        else if files_exist is true then
             log_event("Archiving...images exist")
             set files_exist to false
             hideTempProgress()
@@ -733,26 +773,22 @@ script AppDelegate
     
     --CHECK DOWNLOAD 4 - RENAME AND MOVE TO PROCESSED FOLDER
     on checkdownload4()
-        set thefiles to false
         
         --try to get the contents of the folder
         log_event("Archiving...Checking for download4 files")
         try
             tell app "Finder" to set thecontents to every file of Download4FinalFolder
-            --get the number of items
-            set countofitems to (count of items in thecontents)
-            --update the max value on the bar
-            tell tempBar1 to setMaxValue_(curTempMaxValue + (countofitems * 2) as integer)
-            set thefiles to true
+            if (count of items in thecontents) > 0 then set D4exists to true
             log_event("Archiving...download4 files exist!")
         on error errmsg
             log_event("Archiving...download4 files do not exist")
         end try
         
         --if they exists rename & move them to the processed folder
-        if thefiles = true then
+        if D4exists = true then
             set api_filenumber to 0
             log_event("Archiving...Processing download4 files")
+            
             --rename the files
             repeat with api in thecontents
                 log_event("Archiving...Gather information about: " & api as string)
@@ -766,7 +802,7 @@ script AppDelegate
                     --get the extention of the file
                     set api_extention to name extension of api as string
                 end tell
-                tempProgressUpdate(1,"Resizing " & (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
+                tempProgressUpdate(1,"Resizing " & (carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
                 delay 0.05
                 log_event("Archiving...resize file")
                 --resize the image
@@ -777,12 +813,12 @@ script AppDelegate
                     save this_image with icon
                     close this_image
                 end tell
-                --duplicate and rename the file
-                tempProgressUpdate(1,"Rename " & (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
+                --Rename the file
+                tempProgressUpdate(1,"Rename " & (carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string) & "...")
                 delay 0.05
-                log_event("Archiving...duplicate and rename file")
-                --rename and move the file
-                do shell script "mv " & POSIX path of (api as alias) & " " & POSIX path of (processedFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string)
+                log_event("Archiving...rename file")
+                --rename the file
+                do shell script "mv " & POSIX path of (api as alias) & " " & POSIX path of (Download4FinalFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string)
             end repeat
             
             log_event("Archiving...Download4 folder finished")
@@ -798,40 +834,46 @@ script AppDelegate
         do shell script "mv " & POSIX path of (RoundHouseHelper_folder & "Download1:*" as string) & " " & POSIX path of prearchiveFolder
         log_event("Archiving...move images from Download1 to Prearchive")
         tempProgressUpdate(1,"Move Download1 images to Prearchive Folder...")
+        delay 0.05
         do shell script "mv " & POSIX path of (RoundHouseHelper_folder & "Download2:*" as string) & " " & POSIX path of prearchiveFolder
         log_event("Archiving...move images from Download2 to Prearchive")
         tempProgressUpdate(1,"Move Download2 images to Prearchive Folder...")
+        delay 0.05
         do shell script "mv " & POSIX path of (RoundHouseHelper_folder & "Download3:*" as string) & " " & POSIX path of prearchiveFolder
         log_event("Archiving...move images from Download3 to Prearchive")
         tempProgressUpdate(1,"Move Download3 images to Prearchive Folder...")
-        
-        --Try to create the folder
-        tempProgressUpdate(1,"Check for/Create new folder in save location...")
-        try
-            tell app "Finder" to make new folder at (saveFolderloc as alias) with properties {name:carNumber as string}
-            log_event("Archiving...Folder created")
-        on error errmsg
-            log_event("Archiving...Folder already exists")
-        end try
+        delay 0.05
         
         --remove any "manual" images if overwrite is true
-        log_event("Archiving...Check for/Remove any previous MANUALUPLOAD images")
-        tempProgressUpdate(1,"Check for/Remove any previous MANUALUPLOAD images...")
+        log_event("Archiving...Remove any previous MANUALUPLOAD images")
+        tempProgressUpdate(1,"Remove any previous MANUALUPLOAD images...")
+        delay 0.05
         try
-            if overwrite = true then
-                tell app "Finder" to set thecontents to every file of ((saveFolderloc & carNumber as string) as alias) whose name contains "UPLOADMANUAL"
-                log_event("Archiving...Removing existing MANUALUPLOAD images...")
-                repeat with api in thecontents
-                    log_event("Archiving...Removing " & api as string)
-                    do shell script "rm -rf " & POSIX path of (api as alias)
-                end repeat
-            end if
+            do shell script "rm -r " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
+        end try
+        
+        --Try to create the folder
+        tempProgressUpdate(1,"Check for/Create new folders in save location...")
+        delay 0.05
+        try
+            tell app "Finder" to make new folder at (saveFolderloc as alias) with properties {name:carNumber as string}
+            log_event("Archiving...Car Folder created")
+        on error errmsg
+            log_event("Archiving...Car Folder already exists")
+        end try
+        --try to create the Manual folder in processed
+        try
+            if D4exists is true then tell app "Finder" to make new folder at ((saveFolderloc & carNumber & ":" as string) as alias) with properties {name:"Manual"}
+            log_event("Archiving...Maunal Folder created")
+        on error errmsg
+            log_event("Archiving...Maunal Folder already exists")
         end try
         
         --Copy the new files over (overwrite automatically)
         log_event("Archiving...Copy files from Processed folder to savefolder with ID: " & carNumber)
         tempProgressUpdate(1,"Copying processed images to save folder: " & carNumber)
         do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
+        if D4exists is true then do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Download4Final:*" as string) & " " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
         
         log_event("Archiving...Organize Data Finished")
         performSelector_withObject_afterDelay_("doArchive", missing value, 0.01)
@@ -843,6 +885,7 @@ script AppDelegate
         
         --try to remove old data if it exists
         tempProgressUpdate(1,"If old data exists, remove it...")
+        delay 0.05
         try
             do shell script "rm -rf " & quoted form of POSIX path of (saveFolderloc & carNumber & ".zip" as string)
             log_event("Archiving...old zip file removed")
@@ -869,6 +912,7 @@ script AppDelegate
     on doneArchive()
         set carNumber to null
         set overwrite to false
+        set D4exists to false
         tempProgressUpdate(10,"Finished Archiving.")
         log_event("Archiving...Done!")
         delay 1
@@ -1028,17 +1072,17 @@ script AppDelegate
     
     on ReshootAButton_(sender)
         closeReshootNew_(me)
-        areYouSure("Are you sure you want to Reshoot A?","reshootA")
+        areYouSure("Are you sure you want to Reshoot A?","reshootA",null)
     end ReshootAButton_
         
     on ReshootBButton_(sender)
         closeReshootNew_(me)
-        areYouSure("Are you sure you want to Reshoot B?","reshootB")
+        areYouSure("Are you sure you want to Reshoot B?","reshootB",null)
     end ReshootBButton_
         
     on NewButton_(sender)
         closeReshootNew_(me)
-        areYouSure("Are you sure you want to start over?","reshootNew")
+        areYouSure("Are you sure you want to start over?","reshootNew",null)
     end NewButton_
     
     on cancelReshootNewButton_(sender)
@@ -1114,22 +1158,28 @@ script AppDelegate
         end if
     end quickCache_
     
-    on areYouSure(message,nextHandler)
+    on areYouSure(message,yesHandler,noHandler)
         tell doubleCheckLabel to setStringValue_(message)
-        set doubleCheckHandler to nextHandler
+        set doubleCheckYesHandler to yesHandler
+        set doubleCheckNoHandler to noHandler
         tell doubleCheckWindow to showOver_(MainWindow)
-        log_event("Are you sure..." & nextHandler)
+        log_event("Are you sure..." & message)
     end areYouSure
     
     on doubleCheckYes_(sender)
         tell current application's NSApp to endSheet_(doubleCheckWindow)
-        performSelector_withObject_afterDelay_(doubleCheckHandler, missing value, 1)
+        if doubleCheckYesHandler is not null then
+            performSelector_withObject_afterDelay_(doubleCheckYesHandler, missing value, 1)
+        end if
         log_event("Are you sure...Yes")
         set doubleCheckHandler to null
     end doubleCheckYes_
     
     on doubleCheckNo_(sender)
         tell current application's NSApp to endSheet_(doubleCheckWindow)
+        if doubleCheckNoHandler is not null then
+            performSelector_withObject_afterDelay_(doubleCheckNoHandler, missing value, 1)
+        end if
         log_event("Are you sure...No")
         set doubleCheckHandler to null
     end doubleCheckNo_
@@ -1171,12 +1221,15 @@ script AppDelegate
     end tempProgressUpdate
     
     on archiveButtonPress_(sender)
-        areYouSure("Are you sure you want to Archive?","startArchive")
+        areYouSure("Are you sure you want to Archive?","startArchive",null)
     end archiveButtonPress_
+    
+    property existsTextField : missing value
     
     on showFilesExistWindow()
         log_event("Car Number exists...")
-        set existsNumber to carNumber
+        set existsNumber to carNumber as string
+        tell existsTextField to setStringValue_(carNumber)
         tell existsWindow to showOver_(MainWindow)
         log_event("Car Number exists...opened")
     end showFilesExistWindow
@@ -1189,7 +1242,7 @@ script AppDelegate
     on cancelFilesExist_(sender)
         log_event("Car Number exists...user canceled")
         closeFilesExistWindow()
-        cancelArchive()
+        enableArchive(true)
     end calcelFilesExist_
     
     on continueFilesExist_(sender)
@@ -1202,19 +1255,23 @@ script AppDelegate
             --move on to next step and overwrite
             closeFilesExistWindow()
             delay 0.3
-            --reopen the temp bar
-            tell tempWindow to showOver_(MainWindow)
-            delay 0.1
-            performSelector_withObject_afterDelay_("prepareImagesForArchive", missing value, 0.01)
+            --ask the user if they are sure
+            areYouSure("Are you sure you wish to overwrite " & carNumber & "?","OverwriteResume","startArchive")
         else if existsSelection as string = "Change the number to:" then
             log_event("Car Number exists...Change number to " & existsNumber as string)
             set carNumber to existsNumber as string
+            set NumberChanged to true
             --Try again with new car number
             closeFilesExistWindow()
             delay 0.3
             performSelector_withObject_afterDelay_("startArchive", missing value, 0.01)
         end if
     end continueFilesExist_
+    
+    on OverwriteResume()
+        tell tempWindow to showOver_(MainWindow)
+        performSelector_withObject_afterDelay_("prepareImagesForArchive", missing value, 0.3)
+    end OverwriteResume
     
     on forceFilesExist_(sender)
         if files_exist = false then
