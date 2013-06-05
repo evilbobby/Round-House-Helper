@@ -206,7 +206,6 @@ script AppDelegate
         retrieveDefaults_(me)
         try
             tell app "Finder" to set testsave to saveFolderloc as alias
-            tresh
             tell app "Finder" to set testraw to rawFolderloc as alias
         on error errmsg
             log_event("Preparing to start...SAVE-RAW FOLDER MISSING")

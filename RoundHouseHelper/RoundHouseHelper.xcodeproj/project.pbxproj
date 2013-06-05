@@ -34,7 +34,7 @@
 		67E7486B17383B60004FC3CD /* RoundHouseHelper-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RoundHouseHelper-Prefix.pch"; sourceTree = "<group>"; };
 		67E7486F17383B60004FC3CD /* AppDelegate.applescript */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.applescript; path = AppDelegate.applescript; sourceTree = "<group>"; };
 		67E7487217383B60004FC3CD /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = round_House_icon_v2.icns; sourceTree = "<group>"; };
+		67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = round_House_icon_v2.icns; path = ../round_House_icon_v2.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,7 +53,6 @@
 		67E7484F17383B60004FC3CD = {
 			isa = PBXGroup;
 			children = (
-				67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */,
 				67E7486317383B60004FC3CD /* RoundHouseHelper */,
 				67E7485A17383B60004FC3CD /* Frameworks */,
 				67E7485917383B60004FC3CD /* Products */,
@@ -101,6 +100,7 @@
 		67E7486417383B60004FC3CD /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				67F97B1C1759EF6E006CF41A /* round_House_icon_v2.icns */,
 				67E549E117499285008296BF /* NSWindow+MyriadHelpers.h */,
 				67E549E217499285008296BF /* NSWindow+MyriadHelpers.m */,
 				67E7486517383B60004FC3CD /* RoundHouseHelper-Info.plist */,
