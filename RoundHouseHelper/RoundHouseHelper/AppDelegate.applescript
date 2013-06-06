@@ -114,6 +114,7 @@ script AppDelegate
     property rawFolderloc : null
     property dropletsExist : null
     property D4exists : false
+    property existsTextField : missing value
     
     
     (* ======================================================================
@@ -693,6 +694,7 @@ script AppDelegate
         if files_exist is true and NumberChanged is true then
             log_event("Archiving...images exist")
             log_event("Archiving...Number already changed, ask to overwrite")
+            set files_exist to false
             set NumberChanged to false
             hideTempProgress()
             delay 0.3
@@ -776,8 +778,11 @@ script AppDelegate
         --try to get the contents of the folder
         log_event("Archiving...Checking for download4 files")
         try
-            tell app "Finder" to set thecontents to every file of Download4FinalFolder
-            if (count of items in thecontents) > 0 then set D4exists to true
+            tell app "Finder"
+                set thecontents to every file of Download4FinalFolder
+                set firstfile to (first item of Download4FinalFolder) as alias
+            end tell
+            set D4exists to true
             log_event("Archiving...download4 files exist!")
         on error errmsg
             log_event("Archiving...download4 files do not exist")
@@ -819,10 +824,10 @@ script AppDelegate
                 --rename the file
                 do shell script "mv " & POSIX path of (api as alias) & " " & POSIX path of (Download4FinalFolder & carNumber & "-manual-" & api_filenumber & ".UPLOADMANUAL." & api_extention as string)
             end repeat
-            
-            log_event("Archiving...Download4 folder finished")
-            performSelector_withObject_afterDelay_("organizeData", missing value, 0.01)
+        log_event("Archiving...Download4 files finished")
         end if
+        
+        performSelector_withObject_afterDelay_("organizeData", missing value, 0.01)
     end checkdownload4
     
     --MOVE ALL OF THE DATA AROUND AND COPY THE FILES TO THE SAVED FOLDER
@@ -852,7 +857,7 @@ script AppDelegate
         end try
         
         --Try to create the folder
-        tempProgressUpdate(1,"Check for/Create new folders in save location...")
+        tempProgressUpdate(1,"Manage save folders in save location...")
         delay 0.05
         try
             tell app "Finder" to make new folder at (saveFolderloc as alias) with properties {name:carNumber as string}
@@ -862,8 +867,12 @@ script AppDelegate
         end try
         --try to create the Manual folder in processed
         try
-            if D4exists is true then tell app "Finder" to make new folder at ((saveFolderloc & carNumber & ":" as string) as alias) with properties {name:"Manual"}
-            log_event("Archiving...Maunal Folder created")
+            if D4exists is true then
+                tell app "Finder" to make new folder at ((saveFolderloc & carNumber & ":" as string) as alias) with properties {name:"Manual"}
+                log_event("Archiving...Maunal Folder created")
+            else
+                log_event("Archiving...Maunal Folder not created - No download4 images")
+            end if
         on error errmsg
             log_event("Archiving...Maunal Folder already exists")
         end try
@@ -912,6 +921,7 @@ script AppDelegate
         set carNumber to null
         set overwrite to false
         set D4exists to false
+        set NumberChanged to false
         tempProgressUpdate(10,"Finished Archiving.")
         log_event("Archiving...Done!")
         delay 1
@@ -921,7 +931,7 @@ script AppDelegate
             performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
         end if
         --reset saved for next use
-        set saved to true
+        set saved to false
     end doneArchive
     
     
@@ -1171,7 +1181,7 @@ script AppDelegate
             performSelector_withObject_afterDelay_(doubleCheckYesHandler, missing value, 1)
         end if
         log_event("Are you sure...Yes")
-        set doubleCheckHandler to null
+        set doubleCheckYesHandler to null
     end doubleCheckYes_
     
     on doubleCheckNo_(sender)
@@ -1180,7 +1190,7 @@ script AppDelegate
             performSelector_withObject_afterDelay_(doubleCheckNoHandler, missing value, 1)
         end if
         log_event("Are you sure...No")
-        set doubleCheckHandler to null
+        set doubleCheckNoHandler to null
     end doubleCheckNo_
     
     on mainPauseProcessing_(sender)
@@ -1223,8 +1233,6 @@ script AppDelegate
         areYouSure("Are you sure you want to Archive?","startArchive",null)
     end archiveButtonPress_
     
-    property existsTextField : missing value
-    
     on showFilesExistWindow()
         log_event("Car Number exists...")
         set existsNumber to carNumber as string
@@ -1257,6 +1265,11 @@ script AppDelegate
             --ask the user if they are sure
             areYouSure("Are you sure you wish to overwrite " & carNumber & "?","OverwriteResume","startArchive")
         else if existsSelection as string = "Change the number to:" then
+            --if the number didn't change let the user know and don't do anything
+            if existsNumber = CurrentImageNumber then
+                display dialog "To archive with a different file number, you must change the file number in the text field" buttons ("Ok") default button 1 with icon (2)
+                return
+            end if
             log_event("Car Number exists...Change number to " & existsNumber as string)
             set carNumber to existsNumber as string
             set NumberChanged to true
