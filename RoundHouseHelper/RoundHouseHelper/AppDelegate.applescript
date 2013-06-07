@@ -84,6 +84,7 @@ script AppDelegate
     property curDroplet : null
     property processImageName : null
     property Delay1 : 0.3
+    property dropletTimeout : 0
     --Image Archiving
     property carNumber : null
     property overwrite : false
@@ -450,6 +451,7 @@ script AppDelegate
         tell MainDetail1 to setStringValue_("Processing " & processImageName)
         
         try
+            set dropletTimeout to dropletTimeout + 1 
             tell app "Finder" to set processedContents to (every file in processedFolder) as text
             set strippedName to (text 1 thru ((offset of the "." in processImageName) - 1) in processImageName)
             if processedContents contains strippedName then
@@ -466,11 +468,17 @@ script AppDelegate
         else if reqReshoot = true then
             performSelector_withObject_afterDelay_("ReshootNewProcess", missing value, Delay1)
             set reqReshoot to false
+        else if dropletTimeout = 40 then
+            --if the timeout is met then ask the user to re-send the image to photoshop
+            set dropletTimeout to 0
+            delay 1
+            areYouSure("The Processed image can not be found. " & return & "Resend last image to photoshop?","waitForDownload",lastTask)
         else if meFinished = true then
             performSelector_withObject_afterDelay_("determineNextImage", missing value, Delay1)
             set meFinished to false
+            set dropletTimeout to 0
         else
-            performSelector_withObject_afterDelay_("waitForDroplet", missing value, 0.5)
+            performSelector_withObject_afterDelay_("waitForDroplet", missing value, Delay1)
         end if
     end waitForDroplet
     
@@ -900,6 +908,8 @@ script AppDelegate
         try
             do shell script "rm -rf " & quoted form of POSIX path of (saveFolderloc & carNumber & ".zip" as string)
             log_event("Archiving...old zip file removed")
+        on error errsmg
+            log_event("Archiving...")
         end try
         
         --Set the zip path
@@ -908,7 +918,7 @@ script AppDelegate
         set zippath to rawFolderloc & carNumber & ".zip" as string
         delay 0.25
         try
-            do shell script "zip -r -jr " & quoted form of POSIX path of zippath & " " & quoted form of POSIX path of prearchiveFolder --& " > /dev/null 2>&1 &"
+            do shell script "zip -r -jr " & quoted form of POSIX path of zippath & " " & quoted form of POSIX path of prearchiveFolder
         on error errmsg
             log_event("Archiving...FAILED WHILE ATTEMPTING TO CREATE ZIP FILE")
             set saved to false
@@ -937,7 +947,7 @@ script AppDelegate
         --clear the cache regaurdless of saved state
         performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
         --reset saved for next use
-        set saved to false
+        set saved to true
     end doneArchive
     
     
@@ -1272,7 +1282,7 @@ script AppDelegate
             areYouSure("Are you sure you wish to overwrite " & carNumber & "?","OverwriteResume","startArchive")
         else if existsSelection as string = "Change the number to:" then
             --if the number didn't change let the user know and don't do anything
-            if existsNumber = CurrentImageNumber then
+            if existsNumber = carNumber then
                 display dialog "To archive with a different file number, you must change the file number in the text field" buttons ("Ok") default button 1 with icon (2)
                 return
             end if
