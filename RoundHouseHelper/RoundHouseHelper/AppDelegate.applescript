@@ -628,6 +628,9 @@ script AppDelegate
     
     --START ARCHIVING
     on startArchive()
+        --disable the archive button
+        enableArchive(false)
+        
         set curTempMaxValue to 89
         log_event("Archiving...")
         log_event("Archiving...Preparing")
@@ -918,6 +921,7 @@ script AppDelegate
     
     --FINISHED!
     on doneArchive()
+        enableArchive(false)
         set carNumber to null
         set overwrite to false
         set D4exists to false
@@ -927,9 +931,11 @@ script AppDelegate
         delay 1
         hideTempProgress()
         --if the zip saved sucessfully then clear the cache, otherwise let the user try again
-        if saved = true then
-            performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
+        if saved is not true then
+            display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (2)
         end if
+        --clear the cache regaurdless of saved state
+        performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
         --reset saved for next use
         set saved to false
     end doneArchive
