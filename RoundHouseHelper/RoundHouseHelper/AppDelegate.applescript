@@ -903,6 +903,7 @@ script AppDelegate
         try
             do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
         on error errmsg
+            set saved to false
             log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO SAVED FOLDER")
             log_event("SAVED FOLDER CONTENTS: " & savedFolderContents)
         end try
@@ -911,6 +912,7 @@ script AppDelegate
             try
                 do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Download4Final:*" as string) & " " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
             on error errmsg
+                set saved to false
                 log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO MANUAL FOLDER")
                 log_event("MANUAL FOLDER CONTENTS: " & manualFolderContents)
             end try
@@ -963,8 +965,10 @@ script AppDelegate
         delay 1
         hideTempProgress()
         --if the zip saved sucessfully then clear the cache, otherwise let the user try again
-        if saved is not true then
-            display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (2)
+        if saved = true then
+            display dialog "Archving Complete!" buttons ("Ok") default button 1 with icon (1)
+        else
+            display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (2)    
         end if
         --clear the cache regaurdless of saved state
         performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
