@@ -876,6 +876,7 @@ script AppDelegate
         on error errmsg
             log_event("Archiving...Car Folder already exists")
         end try
+        
         --try to create the Manual folder in processed
         try
             if D4exists is true then
@@ -888,11 +889,32 @@ script AppDelegate
             log_event("Archiving...Maunal Folder already exists")
         end try
         
+        --get saved folder contents if it fails
+        try
+            tell app "Finder" to set savedFolderContents to every file of ((saveFolderloc & carNumber as string) as alias) as text
+        end try
+        try
+            tell app "Finder" to set manualFolderContents to every file of ((saveFolderloc & carNumber & ":Manual:" as string) as alias) as text
+        end try
+        
         --Copy the new files over (overwrite automatically)
         log_event("Archiving...Copy files from Processed folder to savefolder with ID: " & carNumber)
         tempProgressUpdate(1,"Copying processed images to save folder: " & carNumber)
-        do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
-        if D4exists is true then do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Download4Final:*" as string) & " " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
+        try
+            do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
+        on error errmsg
+            log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO SAVED FOLDER")
+            log_event("SAVED FOLDER CONTENTS: " & savedFolderContents)
+        end try
+        if D4exists is true then
+            log_event("Archiving...Copy files to  manual folder")
+            try
+                do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Download4Final:*" as string) & " " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
+            on error errmsg
+                log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO MANUAL FOLDER")
+                log_event("MANUAL FOLDER CONTENTS: " & manualFolderContents)
+            end try
+        end if
         
         log_event("Archiving...Organize Data Finished")
         performSelector_withObject_afterDelay_("doArchive", missing value, 0.01)
@@ -909,7 +931,7 @@ script AppDelegate
             do shell script "rm -rf " & quoted form of POSIX path of (saveFolderloc & carNumber & ".zip" as string)
             log_event("Archiving...old zip file removed")
         on error errsmg
-            log_event("Archiving...")
+            log_event("Archiving...FAILED TO CREATE ARCHIVE OF RAW IMAGES")
         end try
         
         --Set the zip path
