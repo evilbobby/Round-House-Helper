@@ -967,16 +967,14 @@ script AppDelegate
         delay 1
         hideTempProgress()
         --Log the status of the saved state
-        try
-            log_event("State...Saved is currently " & saved as text)
-        end try
+        log_event("State...Saved is currently " & saved as text)
         --if the zip saved sucessfully then clear the cache, otherwise let the user try again
         if saved is true then
-            log_event("Display window: Archving Complete!")
+            log_event("Display window...Archving Complete!")
             display dialog "Archving Complete!" buttons ("Ok") default button 1 with icon (1)
         else
-            log_event("Display window: The image failed to save properly. Please try again.")
-            display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (2)    
+            log_event("Display window...The image failed to save properly. Please try again.")
+            display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (stop)
         end if
         --reset saved for next use
         set saved to true
@@ -1008,7 +1006,7 @@ script AppDelegate
         set curView to MainView
         --Start at correct View
         changeView_(me)
-        
+                
         --initializing turned to false after applicationWillFinishLaunching
         set initializing to false
 	end applicationWillFinishLaunching_
