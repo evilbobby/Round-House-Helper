@@ -966,6 +966,10 @@ script AppDelegate
         tempProgressUpdate(10,"Finished Archiving.")
         delay 1
         hideTempProgress()
+        --Log the status of the saved state
+        try
+            log_event("State...Saved is currently " & saved as text)
+        end try
         --if the zip saved sucessfully then clear the cache, otherwise let the user try again
         if saved is true then
             log_event("Display window: Archving Complete!")
