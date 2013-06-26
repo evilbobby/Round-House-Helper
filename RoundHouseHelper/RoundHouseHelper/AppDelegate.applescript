@@ -903,8 +903,9 @@ script AppDelegate
         try
             do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
         on error errmsg
-            set saved to false
             log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO SAVED FOLDER")
+            set saved to false
+            log_event("State...Saved set to false")
             log_event("SAVED FOLDER CONTENTS: " & savedFolderContents)
         end try
         if D4exists is true then
@@ -912,8 +913,9 @@ script AppDelegate
             try
                 do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Download4Final:*" as string) & " " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
             on error errmsg
-                set saved to false
                 log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO MANUAL FOLDER")
+                set saved to false
+                log_event("State...Saved set to false")
                 log_event("MANUAL FOLDER CONTENTS: " & manualFolderContents)
             end try
         end if
@@ -946,6 +948,7 @@ script AppDelegate
         on error errmsg
             log_event("Archiving...FAILED WHILE ATTEMPTING TO CREATE ZIP FILE")
             set saved to false
+            log_event("State...Saved set to false")
             tell me to display dialog "Failed to create .zip of raw images! Please close and re-open the Helper." buttons ("Ok") default button 1 with icon (stop)
         end try
         
@@ -961,19 +964,22 @@ script AppDelegate
         set D4exists to false
         set NumberChanged to false
         tempProgressUpdate(10,"Finished Archiving.")
-        log_event("Archiving...Done!")
         delay 1
         hideTempProgress()
         --if the zip saved sucessfully then clear the cache, otherwise let the user try again
-        if saved = true then
+        if saved is true then
+            log_event("Display window: Archving Complete!")
             display dialog "Archving Complete!" buttons ("Ok") default button 1 with icon (1)
         else
+            log_event("Display window: The image failed to save properly. Please try again.")
             display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (2)    
         end if
-        --clear the cache regaurdless of saved state
-        performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
         --reset saved for next use
         set saved to true
+        log_event("State...Saved set to true")
+        --clear the cache regaurdless of saved state
+        performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
+        log_event("Archiving...Done!")
     end doneArchive
     
     
