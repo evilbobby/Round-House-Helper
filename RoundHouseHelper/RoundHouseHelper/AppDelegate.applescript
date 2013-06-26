@@ -982,7 +982,7 @@ script AppDelegate
         set saved to true
         log_event("State...Saved set to true")
         --clear the cache regaurdless of saved state
-        performSelector_withObject_afterDelay_("StartClearCache", missing value, 0.1)
+        performSelector_withObject_afterDelay_("StartClearCache", missing value, 1)
         log_event("Archiving...Done!")
     end doneArchive
     
