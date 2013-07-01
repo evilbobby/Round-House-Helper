@@ -100,6 +100,7 @@ script AppDelegate
     --Already exists window
     property existsSelection : "Overwrite"
     property existsNumber : missing value
+    property existsTextField : missing value
     --Globals
     property dropletFolder : null
     property drop1Name : "Download1_Droplet"
@@ -115,7 +116,6 @@ script AppDelegate
     property rawFolderloc : null
     property dropletsExist : null
     property D4exists : false
-    property existsTextField : missing value
     
     
     (* ======================================================================
@@ -642,6 +642,11 @@ script AppDelegate
         set curTempMaxValue to 89
         log_event("Archiving...")
         log_event("Archiving...Preparing")
+        
+        --set overwrite to false
+        set overwrite to false
+        log_event("Archiving...Reset Overwrite status")
+        
         showTempProgress("Preparing to archive current take...",curTempMaxValue,0)
         performSelector_withObject_afterDelay_("updateProgressD4", missing value, 0.01)
     end startArchive
@@ -694,7 +699,7 @@ script AppDelegate
             tempProgressUpdate(1,"Checking if files already exists in save locations...")
         try
             tell application "Finder" to set Completed_folder_contents to (entire contents of ((saveFolderloc & carNumber & ":" as string) as alias) as text)
-            if Completed_folder_contents contains "-edc-" or Completed_folder_contents contains "-edo-" or Completed_folder_contents contains "-top-" then set files_exist to true
+            if Completed_folder_contents contains "-edc-" or Completed_folder_contents contains "-edo-" or Completed_folder_contents contains "-top-" or Completed_folder_contents contains "-manual-" then set files_exist to true
         end try
         try
             tell application "Finder" to set zip_folder_contents to (entire contents of (rawFolderloc as alias) as text)
@@ -841,7 +846,7 @@ script AppDelegate
         performSelector_withObject_afterDelay_("organizeData", missing value, 0.01)
     end checkdownload4
     
-    --MOVE ALL OF THE DATA AROUND AND COPY THE FILES TO THE SAVED FOLDER
+    --PREPARE DATA AND COPY THE FILES TO THE SAVED FOLDER
     on organizeData()
         log_event("Archiving...Organize Data")
         
@@ -864,10 +869,10 @@ script AppDelegate
         tempProgressUpdate(1,"Remove any previous MANUALUPLOAD images...")
         delay 0.05
         try
-            do shell script "rm -r " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
+            if overwrite is true then do shell script "rm -r " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
         end try
         
-        --Try to create the folder
+        --Try to create the car folder
         tempProgressUpdate(1,"Manage save folders in save location...")
         delay 0.05
         try
@@ -877,46 +882,79 @@ script AppDelegate
             log_event("Archiving...Car Folder already exists")
         end try
         
-        --try to create the Manual folder in processed
+        --try to create the Manual folder
         try
             if D4exists is true then
                 tell app "Finder" to make new folder at ((saveFolderloc & carNumber & ":" as string) as alias) with properties {name:"Manual"}
                 log_event("Archiving...Maunal Folder created")
             else
-                log_event("Archiving...Maunal Folder not created - No download4 images")
+                log_event("Archiving...No Images - Maunal Folder not created")
             end if
         on error errmsg
             log_event("Archiving...Maunal Folder already exists")
         end try
         
-        --get saved folder contents if it fails
+        --get saved folder contents for overwrite/error
         try
-            tell app "Finder" to set savedFolderContents to every file of ((saveFolderloc & carNumber as string) as alias) as text
+            tell app "Finder" to set savedFolderContents to every file of ((saveFolderloc & carNumber as string) as alias)
         end try
         try
-            tell app "Finder" to set manualFolderContents to every file of ((saveFolderloc & carNumber & ":Manual:" as string) as alias) as text
+            tell app "Finder" to set manualFolderContents to every file of ((saveFolderloc & carNumber & ":Manual:" as string) as alias)
         end try
+        
+        --if overwrite is true then recite contents of folders before overwrite
+        if overwrite is true then
+            log_event("Archiving...Overwite is true")
+            try
+                if item 1 of savedFolderContents exists then reciteFolderContents(savedFolderContents,"SAVE FOLDER CONTENTS")
+            end try
+            try
+                if item 1 of manualFolderContents exists then reciteFolderContents(manualFolderContents,"MANUAL FOLDER CONTENTS")
+            end try
+        end if
         
         --Copy the new files over (overwrite automatically)
         log_event("Archiving...Copy files from Processed folder to savefolder with ID: " & carNumber)
         tempProgressUpdate(1,"Copying processed images to save folder: " & carNumber)
+        
         try
             do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Processed:*" as string) & " " & POSIX path of (saveFolderloc & carNumber as string)
         on error errmsg
-            log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO SAVED FOLDER")
+            log_event("Archiving...FAILED TO MOVE FINAL IMAGES TO SAVED FOLDER")
             set saved to false
-            log_event("State...Saved set to false")
-            log_event("SAVED FOLDER CONTENTS: " & savedFolderContents)
+            log_event("Archiving...Archiving Values Reset")
+            --if overwrite it false then recite the old contents of the saved folder
+            if overwrite is false then
+                try
+                    if item 1 of savedFolderContents exists then reciteFolderContents(savedFolderContents,"OLD SAVE FOLDER CONTENTS")
+                end try
+            end if
+            --recite the new contents of the saved folder
+            try
+                tell app "Finder" to set savedFolderContents to every file of ((saveFolderloc & carNumber as string) as alias)
+                reciteFolderContents(savedFolderContents,"NEW SAVE FOLDER CONTENTS")
+            end try
         end try
+        
         if D4exists is true then
             log_event("Archiving...Copy files to  manual folder")
             try
                 do shell script "cp " & POSIX path of (RoundHouseHelper_folder & "Download4Final:*" as string) & " " & POSIX path of (saveFolderloc & carNumber & ":Manual:" as string)
             on error errmsg
-                log_event("Archiving...FAILED TO MOVE FINAL IMAGE TO MANUAL FOLDER")
+                log_event("Archiving...FAILED TO MOVE MANUAL IMAGES TO MANUAL FOLDER")
                 set saved to false
                 log_event("State...Saved set to false")
-                log_event("MANUAL FOLDER CONTENTS: " & manualFolderContents)
+                --if overwrite it false then recite the old contents of the maunal folder
+                if overwrite is false then
+                    try
+                        if item 1 of manualFolderContents exists then reciteFolderContents(manualFolderContents,"OLD MANUAL FOLDER CONTENTS")
+                    end try
+                end if
+                --recite the new contents of the manual folder
+                try
+                    tell app "Finder" to set manualFolderContents to every file of ((saveFolderloc & carNumber & ":Manual:" as string) as alias)
+                    reciteFolderContents(manualFolderContents,"NEW MANUAL FOLDER CONTENTS")
+                end try
             end try
         end if
         
@@ -943,6 +981,8 @@ script AppDelegate
         tempProgressUpdate(1,"Archiving Raw Images (zip)...Please wait")
         set zippath to rawFolderloc & carNumber & ".zip" as string
         delay 0.25
+        
+        --create the zip file!
         try
             do shell script "zip -r -jr " & quoted form of POSIX path of zippath & " " & quoted form of POSIX path of prearchiveFolder
         on error errmsg
@@ -970,15 +1010,15 @@ script AppDelegate
         log_event("State...Saved is currently " & saved as text)
         --if the zip saved sucessfully then clear the cache, otherwise let the user try again
         if saved is true then
-            log_event("Display window...Archving Complete!")
-            display dialog "Archving Complete!" buttons ("Ok") default button 1 with icon (1)
+            log_event("Display dialog...Archiving Complete!")
+            display dialog "Archiving Complete!" buttons ("Ok") default button 1 with icon (1)
         else
-            log_event("Display window...The image failed to save properly. Please try again.")
-            display dialog "The image failed to save properly. Please try again." buttons ("Ok") default button 1 with icon (stop)
+            log_event("Display dialog...The image failed to save properly. Please restart.")
+            display dialog "The image failed to save properly. Please restart." buttons ("Ok") default button 1 with icon (stop)
         end if
         --reset saved for next use
         set saved to true
-        log_event("State...Saved set to true")
+        log_event("State...Saved reset to true")
         --clear the cache regaurdless of saved state
         performSelector_withObject_afterDelay_("StartClearCache", missing value, 1)
         log_event("Archiving...Done!")
@@ -1291,6 +1331,11 @@ script AppDelegate
         log_event("Car Number exists...opened")
     end showFilesExistWindow
     
+    on forceShowFilesExistWindow_(sender)
+        set carNumber to "10000000001"
+        showFilesExistWindow()
+    end forceShowFilesExistWindow_
+    
     on closeFilesExistWindow()
         tell current application's NSApp to endSheet_(existsWindow)
         log_event("Car Number exists...closed")
@@ -1307,19 +1352,18 @@ script AppDelegate
         --Check what the user indicated to do via radio buttons
         if existsSelection as string = "Overwrite" then
             log_event("Car Number exists...Overwrite")
-            --set overwrite
-            set overwrite to true
             --move on to next step and overwrite
             closeFilesExistWindow()
             delay 0.3
             --ask the user if they are sure
             areYouSure("Are you sure you wish to overwrite " & carNumber & "?","OverwriteResume","startArchive")
-        else if existsSelection as string = "Change the number to:" then
+        else
             --if the number didn't change let the user know and don't do anything
             if existsNumber = carNumber then
                 display dialog "To archive with a different file number, you must change the file number in the text field" buttons ("Ok") default button 1 with icon (2)
                 return
             end if
+            --change the car number
             log_event("Car Number exists...Change number to " & existsNumber as string)
             set carNumber to existsNumber as string
             set NumberChanged to true
@@ -1330,8 +1374,18 @@ script AppDelegate
         end if
     end continueFilesExist_
     
+    on toggleExistsTextField_(sender)
+        if existsSelection as text is "Change the number to:" then
+            tell existsTextField to setEnabled_(1)
+        else
+            tell existsTextField to setEnabled_(0)
+        end if
+    end toggleExists_
+    
     on OverwriteResume()
         tell tempWindow to showOver_(MainWindow)
+        set overwrite to true
+        log_event("Archiving...Overwrite is true")
         performSelector_withObject_afterDelay_("prepareImagesForArchive", missing value, 0.3)
     end OverwriteResume
     
@@ -1348,6 +1402,10 @@ script AppDelegate
     on forceFinishProcess_(sender)
         set processNumber to 35
     end forceFinishProcess_
+    
+    on forceDoneArchive_(sender)
+        doneArchive()
+    end forceDoneArchive_
 
     
     (* ======================================================================
@@ -1570,6 +1628,8 @@ script AppDelegate
         end try
     end dropletButtons_
     
+    
+    
     (* ======================================================================
                                 Handler for logging!
      ====================================================================== *)
@@ -1605,5 +1665,13 @@ script AppDelegate
         end if
     end checklog
     
+    on reciteFolderContents(theFolderItems,theTitle)
+        log_event(theTitle & "...START")
+        repeat with i in theFolderItems
+            set theName to name of i as text
+            log_event(theName)
+        end repeat
+        log_event(theTitle & "...END")
+    end reciteFolderContents
     
 end script
