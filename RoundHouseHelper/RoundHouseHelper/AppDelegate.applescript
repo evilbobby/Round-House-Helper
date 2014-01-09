@@ -814,7 +814,7 @@ script AppDelegate
                 log_event("Archiving...Gather information about: " & api as string)
                 --set file number
                 set api_filenumber to api_filenumber + 1
-                if api_filenumber < 9 then set api_filenumber to  ("0" & api_filenumber as string)
+                if api_filenumber < 10 then set api_filenumber to  ("0" & api_filenumber as string)
                 --rename the files
                 tell application "Finder"
                     --Get the name of the file
@@ -1487,7 +1487,7 @@ script AppDelegate
             tell drop3Indicator to setIntValue_(1)
         else
             set droplet3exist of dropletsExist to false
-            if initializing is true then log_event("MISSING DROPLET " & drop13Name as string)
+            if initializing is true then log_event("MISSING DROPLET " & drop3Name as string)
             tell drop3Indicator to setIntValue_(3)
         end if
         log_event("Checking for Droplets...Finished")
